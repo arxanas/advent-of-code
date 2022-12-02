@@ -1,4 +1,9 @@
+import os
 import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+from utils import split_line_groups
 
 TEST_INPUT = """
 1000
@@ -21,21 +26,29 @@ Input = list[list[int]]
 
 
 def parse_input(input: str) -> Input:
-    groups = input.strip().split("\n\n")
+    groups = split_line_groups(input)
     return [
         [int(calories) for calories in group.strip().split("\n")] for group in groups
     ]
 
 
-def part1(input: Input) -> str:
+def part1(input: Input) -> int:
     max_calories = max(sum(group) for group in input)
-    return str(max_calories)
+    return max_calories
 
 
-def part2(input: Input) -> str:
+def test_part1() -> None:
+    assert part1(parse_input(TEST_INPUT)) == 24000
+
+
+def part2(input: Input) -> int:
     calorie_sums = [sum(group) for group in input]
     calorie_sums.sort(reverse=True)
-    return str(sum(calorie_sums[:3]))
+    return sum(calorie_sums[:3])
+
+
+def test_part2() -> None:
+    assert part2(parse_input(TEST_INPUT)) == 45000
 
 
 def main() -> None:
