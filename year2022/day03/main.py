@@ -3,6 +3,8 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+from utils import split_into_groups_of_size_n, split_into_n_groups_exn
+
 TEST_INPUT = """
 vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -19,20 +21,22 @@ def parse_input(input: str) -> Input:
     return input.strip().splitlines()
 
 
+def priority(char: str) -> int:
+    assert len(char) == 1
+    if "a" <= char <= "z":
+        return ord(char) - ord("a") + 1
+    elif "A" <= char <= "Z":
+        return ord(char) - ord("A") + 1 + 26
+    else:
+        raise ValueError(char)
+
+
 def part1(input: Input) -> int:
     result = 0
     for line in input:
-        midpoint = len(line) // 2
-        lhs = line[:midpoint]
-        rhs = line[midpoint:]
+        (lhs, rhs) = split_into_n_groups_exn(line, n=2)
         common = list(set(lhs) & set(rhs))[0]
-        assert len(common) == 1
-        if "a" <= common <= "z":
-            result += ord(common) - ord("a") + 1
-        elif "A" <= common <= "Z":
-            result += ord(common) - ord("A") + 1 + 26
-        else:
-            raise ValueError(common)
+        result += priority(common)
     return result
 
 
@@ -42,18 +46,9 @@ def test_part1() -> None:
 
 def part2(input: Input) -> int:
     result = 0
-    groups = []
-    for i in range(0, len(input), 3):
-        groups.append(input[i : i + 3])
-    for (r1, r2, r3) in groups:
+    for (r1, r2, r3) in split_into_groups_of_size_n(input, 3):
         common = list(set(r1) & set(r2) & set(r3))[0]
-        assert len(common) == 1
-        if "a" <= common <= "z":
-            result += ord(common) - ord("a") + 1
-        elif "A" <= common <= "Z":
-            result += ord(common) - ord("A") + 1 + 26
-        else:
-            raise ValueError(common)
+        result += priority(common)
     return result
 
 
