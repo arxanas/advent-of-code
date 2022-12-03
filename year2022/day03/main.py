@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import split_into_groups_of_size_n, split_into_n_groups_exn
+from utils import only_exn, split_into_groups_of_size_n, split_into_n_groups_exn
 
 TEST_INPUT = """
 vJrwpWtwJgWrhcsFMMfFFhFp
@@ -35,7 +35,7 @@ def part1(input: Input) -> int:
     result = 0
     for line in input:
         (lhs, rhs) = split_into_n_groups_exn(line, n=2)
-        common = list(set(lhs) & set(rhs))[0]
+        common = only_exn(set(lhs) & set(rhs))
         result += priority(common)
     return result
 

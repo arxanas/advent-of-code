@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, TypeVar
+from typing import Iterable, Optional, Sequence, TypeVar, cast
 
 import pytest
 
@@ -47,14 +47,19 @@ def test_split_into_n_groups_exn() -> None:
         split_into_n_groups_exn("foobar", 4)
 
 
-def only(seq: Sequence[T]) -> Optional[T]:
-    """Return the only element of the sequence, or None if the sequence is empty
-    or has more than one element.
-    """
-    if len(seq) == 1:
-        return seq[0]
-    else:
+def only(seq: Iterable[T]) -> Optional[T]:
+    """Return the only element of the iterable, or return None if the iterable
+    is empty or has more than one element."""
+    seen_elem = False
+    to_return = None
+    for elem in seq:
+        if seen_elem:
+            return None
+        to_return = elem
+        seen_elem = True
+    if not seen_elem:
         return None
+    return to_return
 
 
 def test_only() -> None:
@@ -63,23 +68,26 @@ def test_only() -> None:
     assert only([]) is None
 
 
-def only_exn(seq: Sequence[T]) -> Optional[T]:
-    """Return the only element of the sequence, or None if the sequence is empty
-    or has more than one element.
-    """
-    if len(seq) == 1:
-        return seq[0]
-    else:
-        raise ValueError(
-            "Expected exactly one element, got {} in sequence {!r}".format(
-                len(seq), seq
+def only_exn(seq: Iterable[T]) -> T:
+    """Return the only element of the iterable, or raise an exception if the
+    iterable is empty or has more than one element."""
+    seen_elem = False
+    to_return = None
+    for elem in seq:
+        if seen_elem:
+            raise ValueError(
+                "Expected only one element, but got more: {!r}".format(seq)
             )
-        )
+        to_return = elem
+        seen_elem = True
+    if not seen_elem:
+        raise ValueError("Iterable is empty")
+    return cast(T, to_return)
 
 
-def test_onlyx() -> None:
+def test_only_exn() -> None:
     assert only_exn([1]) == 1
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Expected only one element"):
         only_exn([1, 2])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Iterable is empty"):
         only_exn([])
