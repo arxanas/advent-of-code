@@ -7,6 +7,9 @@ TEST_INPUT = """
 TODO
 """
 
+PART_1_ANSWER = 0
+PART_2_ANSWER = 0
+
 Input = str
 
 
@@ -15,19 +18,21 @@ def parse_input(input: str) -> Input:
 
 
 def part1(input: Input) -> int:
-    return 0
+    result = 0
+    return result
 
 
 def test_part1() -> None:
-    assert part1(parse_input(TEST_INPUT)) == 0
+    assert part1(parse_input(TEST_INPUT)) == PART_1_ANSWER
 
 
 def part2(input: Input) -> int:
-    return 0
+    result = 0
+    return result
 
 
 def test_part2() -> None:
-    assert part2(parse_input(TEST_INPUT)) == 0
+    assert part2(parse_input(TEST_INPUT)) == PART_2_ANSWER
 
 
 def main() -> None:
