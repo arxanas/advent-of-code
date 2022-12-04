@@ -129,6 +129,8 @@ class InclusiveInterval:
 def test_inclusive_interval(lhs1: int, lhs2: int, rhs1: int, rhs2: int) -> None:
     lhs = InclusiveInterval(start=lhs1, end=lhs2)
     rhs = InclusiveInterval(start=rhs1, end=rhs2)
+    assert lhs in lhs
+    assert lhs.overlaps(lhs)
     if lhs.overlaps(rhs):
         assert rhs.overlaps(lhs)
     if lhs in rhs:
