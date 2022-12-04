@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import split_line_groups
+import utils
 
 TEST_INPUT = """
 1000
@@ -26,7 +26,7 @@ Input = list[list[int]]
 
 
 def parse_input(input: str) -> Input:
-    groups = split_line_groups(input)
+    groups = utils.split_line_groups(input)
     return [
         [int(calories) for calories in group.strip().split("\n")] for group in groups
     ]

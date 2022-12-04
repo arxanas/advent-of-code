@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import InclusiveInterval
+import utils
 
 TEST_INPUT = """
 2-4,6-8
@@ -34,8 +34,8 @@ def parse_input(input: str) -> Input:
 def part1(input: Input) -> int:
     result = 0
     for (lhs, rhs) in input:
-        lhs2 = InclusiveInterval.from_tuple(lhs)
-        rhs2 = InclusiveInterval.from_tuple(rhs)
+        lhs2 = utils.InclusiveInterval.from_tuple(lhs)
+        rhs2 = utils.InclusiveInterval.from_tuple(rhs)
         if lhs2 in rhs2 or rhs2 in lhs2:
             result += 1
     return result
@@ -48,8 +48,8 @@ def test_part1() -> None:
 def part2(input: Input) -> int:
     result = 0
     for (lhs, rhs) in input:
-        lhs2 = InclusiveInterval.from_tuple(lhs)
-        rhs2 = InclusiveInterval.from_tuple(rhs)
+        lhs2 = utils.InclusiveInterval.from_tuple(lhs)
+        rhs2 = utils.InclusiveInterval.from_tuple(rhs)
         if lhs2.overlaps(rhs2):
             result += 1
     return result
