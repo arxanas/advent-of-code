@@ -3,6 +3,8 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+from utils import InclusiveInterval
+
 TEST_INPUT = """
 2-4,6-8
 2-3,4-5
@@ -32,9 +34,9 @@ def parse_input(input: str) -> Input:
 def part1(input: Input) -> int:
     result = 0
     for (lhs, rhs) in input:
-        if rhs[0] <= lhs[0] <= rhs[1] and rhs[0] <= lhs[1] <= rhs[1]:
-            result += 1
-        elif lhs[0] <= rhs[0] <= lhs[1] and lhs[0] <= rhs[1] <= lhs[1]:
+        lhs2 = InclusiveInterval.from_tuple(lhs)
+        rhs2 = InclusiveInterval.from_tuple(rhs)
+        if lhs2 in rhs2 or rhs2 in lhs2:
             result += 1
     return result
 
@@ -46,9 +48,9 @@ def test_part1() -> None:
 def part2(input: Input) -> int:
     result = 0
     for (lhs, rhs) in input:
-        if rhs[0] <= lhs[0] <= rhs[1] or rhs[0] <= lhs[1] <= rhs[1]:
-            result += 1
-        elif lhs[0] <= rhs[0] <= lhs[1] or lhs[0] <= rhs[1] <= lhs[1]:
+        lhs2 = InclusiveInterval.from_tuple(lhs)
+        rhs2 = InclusiveInterval.from_tuple(rhs)
+        if lhs2.overlaps(rhs2):
             result += 1
     return result
 
