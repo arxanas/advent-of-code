@@ -26,27 +26,16 @@ Input = tuple[list[list[str]], list[tuple[int, int, int]]]
 
 def parse_input(input: str) -> Input:
     (crate_lines, step_lines) = input.strip("\n").split("\n\n")
-    crate_lines2 = crate_lines.splitlines()[:-1]
-    crates: list[list[str]] = [[] for i in range(len(crate_lines2))]
-    for line in crate_lines2:
-        for (i, c) in enumerate(line):
-            if (i - 1) % 4 == 0:
-                if c.isalpha():
-                    crate_num = (i - 1) // 4
-                    assert len(c) == 1
-                    while len(crates) <= crate_num:
-                        crates.append([])
-                    crates[crate_num].append(c)
-    for crate in crates:
-        crate.reverse()
+    crates: list[list[str]] = []
+    for line in utils.transpose_lines(crate_lines.splitlines()):
+        chars = list(reversed(line.strip()))
+        if chars and chars[0].isdigit():
+            crates.append([c for c in chars if c.isalpha()])
 
     steps = []
     for line in step_lines.splitlines():
         (_, move, _, from_, _, to) = line.split()
-        move2 = int(move)
-        from2 = int(from_)
-        to2 = int(to)
-        steps.append((move2, from2, to2))
+        steps.append((int(move), int(from_), int(to)))
 
     return (crates, steps)
 

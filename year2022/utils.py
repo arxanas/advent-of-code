@@ -179,3 +179,19 @@ def all_same(elements: Iterable[object]) -> bool:
 def test_all_same() -> None:
     assert all_same([1, 1, 1])
     assert not all_same([1, 2, 1])
+
+
+def transpose_lines(lines: Sequence[str]) -> list[str]:
+    """Transpose the given lines of text, so that the first line becomes the
+    first column, the second line becomes the second column, etc. Lines are
+    first padded with the space character " " so that they are all the same
+    length.
+    """
+    max_len = max(len(line) for line in lines)
+    lines = [line.ljust(max_len) for line in lines]
+    return ["".join(line[i] for line in lines) for i in range(max_len)]
+
+
+def test_transpose_lines() -> None:
+    assert transpose_lines(["abc", "def", "ghi"]) == ["adg", "beh", "cfi"]
+    assert transpose_lines(["abc", "defg", "hi"]) == ["adh", "bei", "cf ", " g "]
