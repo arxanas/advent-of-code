@@ -16,7 +16,7 @@ Input = str
 
 
 def parse_input(input: str) -> Input:
-    return input
+    return input.strip()
 
 
 def part1(input: Input) -> int:
