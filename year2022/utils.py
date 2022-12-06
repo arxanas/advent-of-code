@@ -137,11 +137,12 @@ def test_inclusive_interval(lhs1: int, lhs2: int, rhs1: int, rhs2: int) -> None:
         assert lhs.overlaps(rhs)
 
 
-def assert_in_bounds(container: Sequence[object], index: int) -> None:
+def assert_in_bounds(container: Sequence[object], index: int) -> int:
     """Assert that the given index is in bounds for the given container."""
     assert (
         0 <= index < len(container)
     ), f"Index {index} is out of bounds for container of length {len(container)}"
+    return index
 
 
 def all_different(elements: Iterable[object]) -> bool:

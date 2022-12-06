@@ -44,10 +44,8 @@ def part1(input: Input) -> str:
     (crates, moves) = input
     crates = copy.deepcopy(crates)
     for (move, from_, to) in moves:
-        to = to - 1
-        utils.assert_in_bounds(crates, to)
-        from_ = from_ - 1
-        utils.assert_in_bounds(crates, from_)
+        to = utils.assert_in_bounds(crates, to - 1)
+        from_ = utils.assert_in_bounds(crates, from_ - 1)
         for _ in range(move):
             crates[to].append(crates[from_].pop())
     top_crates = [crate[-1] if crate else " " for crate in crates]
@@ -62,10 +60,8 @@ def part2(input: Input) -> str:
     (crates, moves) = input
     crates = copy.deepcopy(crates)
     for (move, from_, to) in moves:
-        to = to - 1
-        utils.assert_in_bounds(crates, to)
-        from_ = from_ - 1
-        utils.assert_in_bounds(crates, from_)
+        to = utils.assert_in_bounds(crates, to - 1)
+        from_ = utils.assert_in_bounds(crates, from_ - 1)
         to_move = []
         for _ in range(move):
             to_move.append(crates[from_].pop())
