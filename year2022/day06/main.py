@@ -20,12 +20,11 @@ def parse_input(input: str) -> Input:
 
 
 def part1(input: Input) -> int:
-    result = 0
     for i in range(4, len(input)):
         last_four = input[i - 4 : i]
-        if len(set(last_four)) == 4:
+        if utils.all_different(last_four):
             return i
-    return result
+    raise ValueError("Start of packet not found")
 
 
 def test_part1() -> None:
@@ -33,12 +32,11 @@ def test_part1() -> None:
 
 
 def part2(input: Input) -> int:
-    result = 0
     for i in range(14, len(input)):
         last_fourteen = input[i - 14 : i]
-        if len(set(last_fourteen)) == 14:
+        if utils.all_different(last_fourteen):
             return i
-    return result
+    raise ValueError("Start of message not found")
 
 
 def test_part2() -> None:

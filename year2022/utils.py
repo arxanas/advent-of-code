@@ -142,3 +142,40 @@ def assert_in_bounds(container: Sequence[object], index: int) -> None:
     assert (
         0 <= index < len(container)
     ), f"Index {index} is out of bounds for container of length {len(container)}"
+
+
+def all_different(elements: Iterable[object]) -> bool:
+    """Return True if all elements in the iterable are different, including if
+    the iterable is empty.
+    """
+    seen = set()
+    for elem in elements:
+        if elem in seen:
+            return False
+        seen.add(elem)
+    return True
+
+
+def test_all_different() -> None:
+    assert all_different([1, 2, 3])
+    assert not all_different([1, 2, 2])
+
+
+def all_same(elements: Iterable[object]) -> bool:
+    """Return True if all elements are the same, including if the iterable is
+    empty."""
+    is_first = True
+    value = None
+    for elem in elements:
+        if is_first:
+            value = elem
+            is_first = False
+        else:
+            if elem != value:
+                return False
+    return True
+
+
+def test_all_same() -> None:
+    assert all_same([1, 1, 1])
+    assert not all_same([1, 2, 1])
