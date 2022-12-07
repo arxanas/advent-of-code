@@ -196,3 +196,18 @@ def transpose_lines(lines: Sequence[str]) -> list[str]:
 def test_transpose_lines() -> None:
     assert transpose_lines(["abc", "def", "ghi"]) == ["adg", "beh", "cfi"]
     assert transpose_lines(["abc", "defg", "hi"]) == ["adh", "bei", "cf ", " g "]
+
+
+def maybe_strip_prefix(s: str, prefix: str) -> Optional[str]:
+    """Return s with the given prefix removed if it's present, otherwise return
+    None.
+    """
+    if s.startswith(prefix):
+        return s[len(prefix) :]
+    else:
+        return None
+
+
+def test_maybe_strip_prefix() -> None:
+    assert maybe_strip_prefix("foobar", "foo") == "bar"
+    assert maybe_strip_prefix("foobar", "bar") is None

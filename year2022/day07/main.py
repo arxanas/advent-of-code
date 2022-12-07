@@ -38,8 +38,50 @@ PART_2_ANSWER = 24933642
 
 @dataclass
 class Command:
-    command: str
+    executable: str
     output: list[list[str]]
+
+
+@dataclass
+class Filesystem:
+    seen_dirs: set[str]
+    seen_files: dict[str, int]
+
+    def calculate_dir_size(self, dir: str) -> int:
+        return sum(
+            size
+            for filename, size in self.seen_files.items()
+            if filename.startswith(dir + "/")
+        )
+
+    @classmethod
+    def from_commands(cls, commands: list[Command]) -> "Filesystem":
+        # Note that the root directory is represented by the empty string,
+        # rather than "/".
+        current_dir: list[str] = []
+        seen_dirs: set[str] = set([])
+        seen_files: dict[str, int] = {}
+
+        for command in commands:
+            maybe_filename = utils.maybe_strip_prefix(command.executable, prefix="cd ")
+            if maybe_filename is not None:
+                if maybe_filename == "..":
+                    current_dir.pop()
+                else:
+                    current_dir.append(maybe_filename)
+                seen_dirs.add("/".join(current_dir))
+            elif command.executable == "ls":
+                for line in command.output:
+                    (lhs, rhs) = line
+                    filename = "/".join(current_dir + [rhs])
+                    if lhs == "dir":
+                        seen_dirs.add(filename)
+                    else:
+                        seen_files[filename] = int(lhs)
+            else:
+                raise ValueError("Unknown command: " + command.executable)
+
+        return cls(seen_dirs=seen_dirs, seen_files=seen_files)
 
 
 Input = list[Command]
@@ -48,45 +90,21 @@ Input = list[Command]
 def parse_input(input: str) -> Input:
     result = []
     for line in input.strip().splitlines():
-        if line.startswith("$ "):
-            result.append(Command(line[2:], []))
+        maybe_executable = utils.maybe_strip_prefix(line, prefix="$ ")
+        if maybe_executable is not None:
+            result.append(Command(executable=maybe_executable, output=[]))
         else:
             result[-1].output.append(line.split(" "))
     return result
 
 
 def part1(input: Input) -> int:
-    current_dir = []
-    seen_dirs: set[str] = set([])
-    seen_files: dict[str, int] = {}
-    for command in input:
-        if command.command.startswith("cd "):
-            filename = command.command[3:]
-            if filename == "..":
-                current_dir.pop()
-            else:
-                current_dir.append(filename)
-            seen_dirs.add("/".join(current_dir))
-        elif command.command == "ls":
-            for line in command.output:
-                (lhs, rhs) = line
-                filename = "/".join(current_dir + [rhs])
-                if lhs == "dir":
-                    seen_dirs.add(filename)
-                else:
-                    seen_files[filename] = int(lhs)
-
-    dir_sizes: dict[str, int] = {}
-
-    def calculate_dir_size(dir: str) -> int:
-        result = 0
-        for filename in seen_files:
-            if filename.startswith(dir + "/"):
-                result += seen_files[filename]
-        return result
-
-    sizes = [x for dir in seen_dirs if (x := calculate_dir_size(dir)) < 100_000]
-    return sum(sizes)
+    filesystem = Filesystem.from_commands(input)
+    return sum(
+        dir_size
+        for dir in filesystem.seen_dirs
+        if (dir_size := filesystem.calculate_dir_size(dir)) < 100_000
+    )
 
 
 def test_part1() -> None:
@@ -94,46 +112,18 @@ def test_part1() -> None:
 
 
 def part2(input: Input) -> int:
-    current_dir = []
-    seen_dirs: set[str] = set([])
-    seen_files: dict[str, int] = {}
-    for command in input:
-        if command.command.startswith("cd "):
-            filename = command.command[3:]
-            if filename == "..":
-                current_dir.pop()
-            else:
-                current_dir.append(filename)
-            seen_dirs.add("/".join(current_dir))
-        elif command.command == "ls":
-            for line in command.output:
-                (lhs, rhs) = line
-                filename = "/".join(current_dir + [rhs])
-                if lhs == "dir":
-                    seen_dirs.add(filename)
-                else:
-                    seen_files[filename] = int(lhs)
-
-    dir_sizes: dict[str, int] = {}
-
-    def calculate_dir_size(dir: str) -> int:
-        result = 0
-        for filename in seen_files:
-            if filename.startswith(dir + "/"):
-                result += seen_files[filename]
-        return result
+    filesystem = Filesystem.from_commands(input)
 
     total_space = 70_000_000
-    used_space = calculate_dir_size("")
+    used_space = filesystem.calculate_dir_size("")
     unused_space = total_space - used_space
     required_space = 30_000_000
     required_dir_size = required_space - unused_space
-    sizes = [
+    return min(
         size
-        for dir in seen_dirs
-        if (size := calculate_dir_size(dir)) >= required_dir_size
-    ]
-    return min(sizes)
+        for dir in filesystem.seen_dirs
+        if (size := filesystem.calculate_dir_size(dir)) >= required_dir_size
+    )
 
 
 def test_part2() -> None:
