@@ -217,9 +217,16 @@ def test_maybe_strip_prefix() -> None:
 
 
 Coord2d = tuple[int, int]
+"""A 2D coordinate, represented as a tuple of (x, y).""" ""
+
 Delta2d = tuple[int, int]
+"""A 2D delta, represented as a tuple of (dx, dy).""" ""
 
 DELTAS_2D_CARDINAL: list[Delta2d] = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+"""The four cardinal directions in 2D, represented as a list of (dx, dy) deltas.
+
+The cardinal directions are up/right/down/left.
+"""
 
 DELTAS_2D_ORDINAL: list[Delta2d] = [
     (1, -1),
@@ -227,24 +234,53 @@ DELTAS_2D_ORDINAL: list[Delta2d] = [
     (-1, 1),
     (-1, -1),
 ]
+"""The four ordinal directions in 2D, represented as a list of (dx, dy) deltas.
+
+The ordinal directions are up-right/down-right/down-left/up-left.
+"""
 
 DELTAS_2D_ALL: list[Delta2d] = DELTAS_2D_CARDINAL + DELTAS_2D_ORDINAL
+"""All eight directions in 2D, represented as a list of (dx, dy) deltas.
+
+The directions are up/right/down/left/up-right/down-right/down-left/up-left.
+"""
 
 
 class DenseGrid2d(Generic[T]):
+    """A 2D grid of values, stored in a list of lists.
+
+    This uses O(nm) memory, where n x m are the dimensions of the grid, i.e. it
+    is dense.
+    """
+
     def __init__(self, rows: list[list[T]]) -> None:
+        """Create a new grid from the given rows.
+
+        The first row is the top row, and the first element of each row is the
+        leftmost element. Note that the rows are naturally indexed via (row,
+        column), but the grid is indexed via (column, row), i.e. (x, y).
+        """
+        if not all_same(len(row) for row in rows):
+            raise ValueError(
+                "All rows must be the same length, but got rows of lengths {}".format(
+                    [len(row) for row in rows]
+                )
+            )
         self._rows = rows
 
     def __getitem__(self, coord: Coord2d) -> T:
+        """Get the value at the given coordinate."""
         (x, y) = coord
         return self._rows[y][x]
 
     def __setitem__(self, coord: Coord2d, value: T) -> None:
+        """Set the value at the given coordinate."""
         (x, y) = coord
         self._rows[y][x] = value
 
     @property
     def width(self) -> int:
+        """The width of the grid, i.e. the number of columns."""
         if len(self._rows) > 0:
             return len(self._rows[0])
         else:
@@ -252,49 +288,75 @@ class DenseGrid2d(Generic[T]):
 
     @property
     def height(self) -> int:
+        """The height of the grid, i.e. the number of rows."""
         return len(self._rows)
 
     def iter_left_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over the left edge of the grid, from top to bottom."""
         for y in range(self.height):
             coord = (0, y)
             yield (coord, self[coord])
 
     def iter_right_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over the right edge of the grid, from top to bottom."""
         for y in range(self.height):
             coord = (self.width - 1, y)
             yield (coord, self[coord])
 
     def iter_vertical_edges(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over the left and right edges of the grid, from top to
+        bottom.
+
+        Note that duplicate coordinates are not yielded (in the situation where
+        the grid is only one column wide).
+        """
         return unique_ordered(
             itertools.chain(self.iter_left_edge(), self.iter_right_edge())
         )
 
     def iter_top_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over the top edge of the grid, from left to right."""
         for x in range(self.width):
             coord = (x, 0)
             yield (coord, self[coord])
 
     def iter_bottom_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over the bottom edge of the grid, from left to right."""
         for x in range(self.width):
             coord = (x, self.height - 1)
             yield (coord, self[coord])
 
     def iter_horizontal_edges(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over the top and bottom edges of the grid, from left to
+        right.
+
+        Note that duplicate coordinates are not yielded (in the situation where
+        the grid is only one row tall).
+        """
         return unique_ordered(
             itertools.chain(self.iter_top_edge(), self.iter_bottom_edge())
         )
 
     def iter_edges(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over all edges of the grid, from left to right, then top to
+        bottom.
+
+        Note that duplicate coordinates are not yielded.
+        """
         return unique_ordered(
             itertools.chain(self.iter_horizontal_edges(), self.iter_vertical_edges())
         )
 
     def iter_coords(self) -> Iterable[Coord2d]:
+        """Iterate over all coordinates in the grid, in some order."""
         for y in range(self.height):
             for x in range(self.width):
                 yield (x, y)
 
     def iter_cells(self) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over all coordinates and values in the grid, in some
+        order.
+        """
         for coord in self.iter_coords():
             yield (coord, self[coord])
 
@@ -305,6 +367,11 @@ class DenseGrid2d(Generic[T]):
         *,
         include_start: bool = True,
     ) -> Iterable[tuple[Coord2d, T]]:
+        """Iterate over all coordinates and values in the grid, starting at
+        the given coordinate and moving in the given direction.
+
+        If include_start is False, the start coordinate is not yielded.
+        """
         (x, y) = start
         (dx, dy) = delta
         while 0 <= x < self.width and 0 <= y < self.height:
@@ -323,6 +390,11 @@ class DenseGrid2d(Generic[T]):
         *,
         include_start: bool = True,
     ) -> Iterable[tuple[Coord2d, T, Delta2d]]:
+        """Iterate over all coordinates and values in the grid, starting at
+        the given coordinate and moving in the given directions.
+
+        If include_start is False, the start coordinate is not yielded.
+        """
         for delta in deltas:
             for (coord, value) in self.iter_delta(
                 start=start, delta=delta, include_start=include_start
@@ -331,6 +403,9 @@ class DenseGrid2d(Generic[T]):
 
 
 def test_grid2d() -> None:
+    with pytest.raises(ValueError, match="All rows must be the same length"):
+        DenseGrid2d([["a", "b"], ["c"]])
+
     grid = DenseGrid2d([["a", "b"], ["c", "d"]])
     assert grid[(0, 0)] == "a"
     assert grid[(1, 0)] == "b"
