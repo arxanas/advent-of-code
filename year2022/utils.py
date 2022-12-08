@@ -1,4 +1,7 @@
-from typing import Iterable, Optional, Sequence, TypeVar, cast
+import functools
+import itertools
+import operator
+from typing import Callable, Generic, Iterable, Optional, Sequence, TypeVar, Union, cast
 
 from hypothesis import example, given, strategies as st
 import pytest
@@ -211,3 +214,246 @@ def maybe_strip_prefix(s: str, prefix: str) -> Optional[str]:
 def test_maybe_strip_prefix() -> None:
     assert maybe_strip_prefix("foobar", "foo") == "bar"
     assert maybe_strip_prefix("foobar", "bar") is None
+
+
+Coord2d = tuple[int, int]
+Delta2d = tuple[int, int]
+
+DELTAS_2D_CARDINAL: list[Delta2d] = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+DELTAS_2D_ORDINAL: list[Delta2d] = [
+    (1, -1),
+    (1, 1),
+    (-1, 1),
+    (-1, -1),
+]
+
+DELTAS_2D_ALL: list[Delta2d] = DELTAS_2D_CARDINAL + DELTAS_2D_ORDINAL
+
+
+class DenseGrid2d(Generic[T]):
+    def __init__(self, rows: list[list[T]]) -> None:
+        self._rows = rows
+
+    def __getitem__(self, coord: Coord2d) -> T:
+        (x, y) = coord
+        return self._rows[y][x]
+
+    def __setitem__(self, coord: Coord2d, value: T) -> None:
+        (x, y) = coord
+        self._rows[y][x] = value
+
+    @property
+    def width(self) -> int:
+        if len(self._rows) > 0:
+            return len(self._rows[0])
+        else:
+            return 0
+
+    @property
+    def height(self) -> int:
+        return len(self._rows)
+
+    def iter_left_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        for y in range(self.height):
+            coord = (0, y)
+            yield (coord, self[coord])
+
+    def iter_right_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        for y in range(self.height):
+            coord = (self.width - 1, y)
+            yield (coord, self[coord])
+
+    def iter_vertical_edges(self) -> Iterable[tuple[Coord2d, T]]:
+        return unique_ordered(
+            itertools.chain(self.iter_left_edge(), self.iter_right_edge())
+        )
+
+    def iter_top_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        for x in range(self.width):
+            coord = (x, 0)
+            yield (coord, self[coord])
+
+    def iter_bottom_edge(self) -> Iterable[tuple[Coord2d, T]]:
+        for x in range(self.width):
+            coord = (x, self.height - 1)
+            yield (coord, self[coord])
+
+    def iter_horizontal_edges(self) -> Iterable[tuple[Coord2d, T]]:
+        return unique_ordered(
+            itertools.chain(self.iter_top_edge(), self.iter_bottom_edge())
+        )
+
+    def iter_edges(self) -> Iterable[tuple[Coord2d, T]]:
+        return unique_ordered(
+            itertools.chain(self.iter_horizontal_edges(), self.iter_vertical_edges())
+        )
+
+    def iter_coords(self) -> Iterable[Coord2d]:
+        for y in range(self.height):
+            for x in range(self.width):
+                yield (x, y)
+
+    def iter_cells(self) -> Iterable[tuple[Coord2d, T]]:
+        for coord in self.iter_coords():
+            yield (coord, self[coord])
+
+    def iter_delta(
+        self,
+        start: Coord2d,
+        delta: Delta2d,
+        *,
+        include_start: bool = True,
+    ) -> Iterable[tuple[Coord2d, T]]:
+        (x, y) = start
+        (dx, dy) = delta
+        while 0 <= x < self.width and 0 <= y < self.height:
+            coord = (x, y)
+            if coord == start and not include_start:
+                pass
+            else:
+                yield (coord, self[coord])
+            x += dx
+            y += dy
+
+    def iter_deltas(
+        self,
+        start: Coord2d,
+        deltas: Iterable[Delta2d],
+        *,
+        include_start: bool = True,
+    ) -> Iterable[tuple[Coord2d, T, Delta2d]]:
+        for delta in deltas:
+            for (coord, value) in self.iter_delta(
+                start=start, delta=delta, include_start=include_start
+            ):
+                yield (coord, value, delta)
+
+
+def test_grid2d() -> None:
+    grid = DenseGrid2d([["a", "b"], ["c", "d"]])
+    assert grid[(0, 0)] == "a"
+    assert grid[(1, 0)] == "b"
+    assert grid[(0, 1)] == "c"
+    assert grid[(1, 1)] == "d"
+    assert grid.width == 2
+    assert grid.height == 2
+
+    assert list(grid.iter_left_edge()) == [((0, 0), "a"), ((0, 1), "c")]
+    assert list(grid.iter_right_edge()) == [((1, 0), "b"), ((1, 1), "d")]
+    assert list(grid.iter_vertical_edges()) == [
+        ((0, 0), "a"),
+        ((0, 1), "c"),
+        ((1, 0), "b"),
+        ((1, 1), "d"),
+    ]
+    assert list(grid.iter_top_edge()) == [((0, 0), "a"), ((1, 0), "b")]
+    assert list(grid.iter_bottom_edge()) == [((0, 1), "c"), ((1, 1), "d")]
+    assert list(grid.iter_horizontal_edges()) == [
+        ((0, 0), "a"),
+        ((1, 0), "b"),
+        ((0, 1), "c"),
+        ((1, 1), "d"),
+    ]
+    assert list(grid.iter_edges()) == [
+        ((0, 0), "a"),
+        ((1, 0), "b"),
+        ((0, 1), "c"),
+        ((1, 1), "d"),
+    ]
+
+    assert list(grid.iter_coords()) == [(0, 0), (1, 0), (0, 1), (1, 1)]
+    assert list(grid.iter_cells()) == [
+        ((0, 0), "a"),
+        ((1, 0), "b"),
+        ((0, 1), "c"),
+        ((1, 1), "d"),
+    ]
+    assert list(grid.iter_delta((0, 0), (1, 0))) == [
+        ((0, 0), "a"),
+        ((1, 0), "b"),
+    ]
+    assert list(grid.iter_delta((0, 0), (1, 0), include_start=False)) == [
+        ((1, 0), "b"),
+    ]
+    assert list(grid.iter_delta((0, 0), (1, 1))) == [
+        ((0, 0), "a"),
+        ((1, 1), "d"),
+    ]
+    assert list(grid.iter_delta((0, 0), (1, 1), include_start=False)) == [
+        ((1, 1), "d"),
+    ]
+    assert list(grid.iter_deltas((0, 0), [(1, 0), (1, 1)])) == [
+        ((0, 0), "a", (1, 0)),
+        ((1, 0), "b", (1, 0)),
+        ((0, 0), "a", (1, 1)),
+        ((1, 1), "d", (1, 1)),
+    ]
+    assert list(grid.iter_deltas((0, 0), [(1, 0), (1, 1)], include_start=False)) == [
+        ((1, 0), "b", (1, 0)),
+        ((1, 1), "d", (1, 1)),
+    ]
+
+
+def count(iterable: Iterable[T]) -> int:  # type: ignore
+    """Return the number of elements in the given iterable."""
+    return sum(1 for _ in iterable)
+
+
+def test_count() -> None:
+    assert count([0, 1, 2, 3, 4]) == 5
+
+
+iota = itertools.count
+
+
+def test_iota() -> None:
+    assert list(itertools.islice(iota(), 5)) == [0, 1, 2, 3, 4]
+
+
+def take_while(predicate: Callable[[T], bool], iterable: Iterable[T]) -> Iterable[T]:
+    """Return elements from the given iterable as long as the given predicate
+    returns True.
+    """
+    # Reimplementing this because itertools.takewhile() doesn't seem to be
+    # generic.
+    return itertools.takewhile(predicate, iterable)
+
+
+def test_take_while() -> None:
+    assert list(take_while(lambda x: x < 3, [0, 1, 2, 3, 4])) == [0, 1, 2]
+
+
+def unique_ordered(iterable: Iterable[T]) -> Iterable[T]:
+    """Return a list of the unique elements in the given iterable, in the order
+    they first appeared.
+    """
+    seen: set[T] = set()
+    for elem in iterable:
+        if elem not in seen:
+            seen.add(elem)
+            yield elem
+
+
+def test_unique_ordered() -> None:
+    assert list(unique_ordered([1, 2, 3, 2, 1])) == [1, 2, 3]
+
+
+def product_int(iterable: Iterable[int]) -> int:
+    """Return the numeric product of the elements in the given iterable."""
+    return functools.reduce(operator.mul, iterable, 1)
+
+
+def test_product_int() -> None:
+    assert product_int([]) == 1
+    assert product_int([1, 2, 3, 4]) == 24
+
+
+def product_float(iterable: Iterable[float]) -> float:
+    """Return the numeric product of the elements in the given iterable."""
+    return functools.reduce(operator.mul, iterable, 1.0)
+
+
+def test_product_float() -> None:
+    assert product_int([]) == 1.0
+    assert product_float([1.0, 2.0, 3.0, 4.0]) == 24.0

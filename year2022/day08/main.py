@@ -17,7 +17,7 @@ TEST_INPUT = """
 PART_1_ANSWER = 21
 PART_2_ANSWER = 8
 
-Input = list[list[int]]
+Input = utils.DenseGrid2d[int]
 
 
 def parse_input(input: str) -> Input:
@@ -27,68 +27,39 @@ def parse_input(input: str) -> Input:
         for char in line:
             row.append(int(char))
         rows.append(row)
-    return rows
+    return utils.DenseGrid2d(rows=rows)
 
 
-def is_visible_from_edge(input: Input, start_ij: tuple[int, int]) -> bool:
-    size = len(input)
-    (i, j) = start_ij
-    cell = input[i][j]
-    for other_i in range(0, i):
-        if input[other_i][j] >= cell:
-            break
-    else:
-        return True
-
-    for other_i in range(i + 1, size):
-        if input[other_i][j] >= cell:
-            break
-    else:
-        return True
-
-    for other_j in range(0, j):
-        if input[i][other_j] >= cell:
-            break
-    else:
-        return True
-
-    for other_j in range(j + 1, size):
-        if input[i][other_j] >= cell:
-            break
-    else:
-        return True
-
+def is_visible_from_edge(grid: Input, start: utils.Coord2d) -> bool:
+    for delta in utils.DELTAS_2D_CARDINAL:
+        if all(
+            value < grid[start]
+            for (_, value) in grid.iter_delta(
+                start=start, delta=delta, include_start=False
+            )
+        ):
+            return True
     return False
 
 
-def part1(input: Input) -> int:
-    size = len(input)
-    result = 0
-    for (i, row) in enumerate(input):
-        for (j, _cell) in enumerate(row):
-            if is_visible_from_edge(input, (i, j)):
-                result += 1
-    return result
+def part1(grid: Input) -> int:
+    return utils.count(
+        coord for coord in grid.iter_coords() if is_visible_from_edge(grid, coord)
+    )
 
 
-def calc_scenic_score(input: Input, ij: tuple[int, int]) -> int:
-    size = len(input)
-    (i, j) = ij
-    cell = input[i][j]
-    deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+def calc_scenic_score(grid: Input, start: tuple[int, int]) -> int:
     scores = []
-    for (di, dj) in deltas:
-        delta_score = 0
-        k = i + di
-        l = j + dj
-        while 0 <= k < size and 0 <= l < size:
-            delta_score += 1
-            if input[k][l] >= cell:
+    for delta in utils.DELTAS_2D_CARDINAL:
+        score = 0
+        for (_, value) in grid.iter_delta(
+            start=start, delta=delta, include_start=False
+        ):
+            score += 1
+            if value >= grid[start]:
                 break
-            k += di
-            l += dj
-        scores.append(delta_score)
-    return reduce(lambda x, y: x * y, scores, 1)
+        scores.append(score)
+    return utils.product_int(scores)
 
 
 def test_part1() -> None:
@@ -96,14 +67,16 @@ def test_part1() -> None:
 
 
 def part2(input: Input) -> int:
-    size = len(input)
-    return max(
-        calc_scenic_score(input, (i, j)) for i in range(size) for j in range(size)
-    )
+    return max(calc_scenic_score(input, coord) for coord in input.iter_coords())
 
 
 def test_part2() -> None:
-    assert part2(parse_input(TEST_INPUT)) == PART_2_ANSWER
+    grid = parse_input(TEST_INPUT)
+    for (coord, _) in grid.iter_edges():
+        assert calc_scenic_score(grid, coord) == 0
+    assert grid[2, 3] == 5
+    assert calc_scenic_score(grid, (2, 3)) == 8
+    assert part2(grid) == PART_2_ANSWER
 
 
 def main() -> None:
