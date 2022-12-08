@@ -48,6 +48,10 @@ def part1(grid: Input) -> int:
     )
 
 
+def test_part1() -> None:
+    assert part1(parse_input(TEST_INPUT)) == PART_1_ANSWER
+
+
 def calc_scenic_score(grid: Input, start: tuple[int, int]) -> int:
     scores = []
     for delta in utils.DELTAS_2D_CARDINAL:
@@ -60,10 +64,6 @@ def calc_scenic_score(grid: Input, start: tuple[int, int]) -> int:
                 break
         scores.append(score)
     return utils.product_int(scores)
-
-
-def test_part1() -> None:
-    assert part1(parse_input(TEST_INPUT)) == PART_1_ANSWER
 
 
 def part2(input: Input) -> int:
