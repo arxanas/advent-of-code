@@ -222,21 +222,31 @@ Coord2d = tuple[int, int]
 Delta2d = tuple[int, int]
 """A 2D delta, represented as a tuple of (dx, dy).""" ""
 
-DELTAS_2D_CARDINAL: list[Delta2d] = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+DElTA_NORTH: Delta2d = (0, -1)
+DELTA_EAST: Delta2d = (1, 0)
+DELTA_SOUTH: Delta2d = (0, 1)
+DELTA_WEST: Delta2d = (-1, 0)
+
+DELTAS_2D_CARDINAL: list[Delta2d] = [DElTA_NORTH, DELTA_EAST, DELTA_SOUTH, DELTA_WEST]
 """The four cardinal directions in 2D, represented as a list of (dx, dy) deltas.
 
-The cardinal directions are up/right/down/left.
+The cardinal directions are north/east/south/west.
 """
 
+DELTA_NORTHEAST: Delta2d = (1, -1)
+DELTA_SOUTHEAST: Delta2d = (1, 1)
+DELTA_SOUTHWEST: Delta2d = (-1, 1)
+DELTA_NORTHWEST: Delta2d = (-1, -1)
+
 DELTAS_2D_ORDINAL: list[Delta2d] = [
-    (1, -1),
-    (1, 1),
-    (-1, 1),
-    (-1, -1),
+    DELTA_NORTHEAST,
+    DELTA_SOUTHEAST,
+    DELTA_SOUTHWEST,
+    DELTA_NORTHWEST,
 ]
 """The four ordinal directions in 2D, represented as a list of (dx, dy) deltas.
 
-The ordinal directions are up-right/down-right/down-left/up-left.
+The ordinal directions are north-east/south-east/south-west/north-west.
 """
 
 DELTAS_2D_ALL: list[Delta2d] = DELTAS_2D_CARDINAL + DELTAS_2D_ORDINAL
@@ -244,6 +254,38 @@ DELTAS_2D_ALL: list[Delta2d] = DELTAS_2D_CARDINAL + DELTAS_2D_ORDINAL
 
 The directions are up/right/down/left/up-right/down-right/down-left/up-left.
 """
+
+
+def parse_delta_from_direction(direction: str) -> Delta2d:
+    """Given a string representing a direction, return the corresponding delta.
+
+    Raises ValueError if the direction is not recognized.
+    """
+    if direction in ["N", "U"]:
+        return DElTA_NORTH
+    elif direction in ["E", "R"]:
+        return DELTA_EAST
+    elif direction in ["S", "D"]:
+        return DELTA_SOUTH
+    elif direction in ["W", "L"]:
+        return DELTA_WEST
+    elif direction in ["NE", "UR"]:
+        return DELTA_NORTHEAST
+    elif direction in ["SE", "DR"]:
+        return DELTA_SOUTHEAST
+    elif direction in ["SW", "DL"]:
+        return DELTA_SOUTHWEST
+    elif direction in ["NW", "UL"]:
+        return DELTA_NORTHWEST
+    else:
+        raise ValueError(f"Could not guess delta from direction {direction}")
+
+
+def add_delta(coord: Coord2d, delta: Delta2d, *, scale: int = 1) -> Coord2d:
+    """Add the given delta to the given coordinate."""
+    (x, y) = coord
+    (dx, dy) = delta
+    return (x + scale * dx, y + scale * dy)
 
 
 class DenseGrid2d(Generic[T]):
@@ -532,3 +574,8 @@ def product_float(iterable: Iterable[float]) -> float:
 def test_product_float() -> None:
     assert product_int([]) == 1.0
     assert product_float([1.0, 2.0, 3.0, 4.0]) == 24.0
+
+
+def clamp_int(value: int, min_value: int, max_value: int) -> int:
+    """Return the given value, clamped to the given range."""
+    return max(min(value, max_value), min_value)
