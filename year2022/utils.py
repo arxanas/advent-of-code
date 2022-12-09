@@ -1,10 +1,11 @@
 import functools
 import itertools
 import operator
-from typing import Callable, Generic, Iterable, Optional, Sequence, TypeVar, Union, cast
+from typing import Callable, Generic, Iterable, Optional, Sequence, TypeVar, cast
 
-from hypothesis import example, given, strategies as st
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 T = TypeVar("T")
 
