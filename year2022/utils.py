@@ -1,7 +1,18 @@
 import functools
 import itertools
 import operator
-from typing import Callable, Generic, Iterable, Optional, Sequence, TypeVar, cast
+from collections import deque
+from typing import (
+    Callable,
+    Generic,
+    Iterable,
+    Literal,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pytest
 from hypothesis import given
@@ -580,3 +591,22 @@ def test_product_float() -> None:
 def clamp_int(value: int, min_value: int, max_value: int) -> int:
     """Return the given value, clamped to the given range."""
     return max(min(value, max_value), min_value)
+
+TNode = TypeVar("TNode")
+
+
+Strategy = Union[Literal["bfs"], Literal["dfs"]]
+
+
+class GraphSearch(Generic[TNode]):
+    def run(self, start: TNode) -> Iterable[TNode]:
+        acc = deque[list[TNode]]()
+        best_path: list[TNode] = []
+        while acc:
+            node = acc.popleft()
+            if node not in best_path:
+                best_path.append(node)
+                acc.extend(self.get_neighbors(node))
+
+    def get_neighbors(self, node: TNode) -> Iterable[TNode]:
+        raise NotImplementedError()
