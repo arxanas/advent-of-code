@@ -1,6 +1,7 @@
 import functools
 import itertools
 import operator
+from dataclasses import dataclass
 from typing import Callable, Generic, Iterable, Optional, Sequence, TypeVar, cast
 
 import pytest
@@ -217,86 +218,183 @@ def test_maybe_strip_prefix() -> None:
     assert maybe_strip_prefix("foobar", "bar") is None
 
 
-Coord2d = tuple[int, int]
-"""A 2D coordinate, represented as a tuple of (x, y).""" ""
+@dataclass(frozen=True, eq=True, order=True)
+class Coord:
+    """A 3D coordinate, represented as a tuple of (x, y, z).
 
-Delta2d = tuple[int, int]
-"""A 2D delta, represented as a tuple of (dx, dy).""" ""
-
-DElTA_NORTH: Delta2d = (0, -1)
-DELTA_EAST: Delta2d = (1, 0)
-DELTA_SOUTH: Delta2d = (0, 1)
-DELTA_WEST: Delta2d = (-1, 0)
-
-DELTAS_2D_CARDINAL: list[Delta2d] = [DElTA_NORTH, DELTA_EAST, DELTA_SOUTH, DELTA_WEST]
-"""The four cardinal directions in 2D, represented as a list of (dx, dy) deltas.
-
-The cardinal directions are north/east/south/west.
-"""
-
-DELTA_NORTHEAST: Delta2d = (1, -1)
-DELTA_SOUTHEAST: Delta2d = (1, 1)
-DELTA_SOUTHWEST: Delta2d = (-1, 1)
-DELTA_NORTHWEST: Delta2d = (-1, -1)
-
-DELTAS_2D_ORDINAL: list[Delta2d] = [
-    DELTA_NORTHEAST,
-    DELTA_SOUTHEAST,
-    DELTA_SOUTHWEST,
-    DELTA_NORTHWEST,
-]
-"""The four ordinal directions in 2D, represented as a list of (dx, dy) deltas.
-
-The ordinal directions are north-east/south-east/south-west/north-west.
-"""
-
-DELTAS_2D_ALL: list[Delta2d] = DELTAS_2D_CARDINAL + DELTAS_2D_ORDINAL
-"""All eight directions in 2D, represented as a list of (dx, dy) deltas.
-
-The directions are up/right/down/left/up-right/down-right/down-left/up-left.
-"""
-
-
-def parse_delta_from_direction(direction: str) -> Delta2d:
-    """Given a string representing a direction, return the corresponding delta.
-
-    Raises ValueError if the direction is not recognized.
-    """
-    if direction in ["N", "U"]:
-        return DElTA_NORTH
-    elif direction in ["E", "R"]:
-        return DELTA_EAST
-    elif direction in ["S", "D"]:
-        return DELTA_SOUTH
-    elif direction in ["W", "L"]:
-        return DELTA_WEST
-    elif direction in ["NE", "UR"]:
-        return DELTA_NORTHEAST
-    elif direction in ["SE", "DR"]:
-        return DELTA_SOUTHEAST
-    elif direction in ["SW", "DL"]:
-        return DELTA_SOUTHWEST
-    elif direction in ["NW", "UL"]:
-        return DELTA_NORTHWEST
-    else:
-        raise ValueError(f"Could not guess delta from direction {direction}")
-
-
-def add_delta(coord: Coord2d, delta: Delta2d, *, scale: int = 1) -> Coord2d:
-    """Add the given delta to the given coordinate."""
-    (x, y) = coord
-    (dx, dy) = delta
-    return (x + scale * dx, y + scale * dy)
-
-
-class DenseGrid2d(Generic[T]):
-    """A 2D grid of values, stored in a list of lists.
-
-    This uses O(nm) memory, where n x m are the dimensions of the grid, i.e. it
-    is dense.
+    For 2D coordinates, z should be 0.
     """
 
-    def __init__(self, rows: list[list[T]]) -> None:
+    x: int
+    y: int
+    z: int
+
+    @classmethod
+    def zero(cls) -> "Coord":
+        return cls(x=0, y=0, z=0)
+
+    @classmethod
+    def from_tuple(cls, value: tuple[int, int, int]) -> "Coord":
+        (x, y, z) = value
+        return cls(x=x, y=y, z=z)
+
+    @classmethod
+    def from_str(cls, value: str) -> "Coord":
+        (x, y, z) = value.split(",")
+        return cls(x=int(x), y=int(y), z=int(z))
+
+    @classmethod
+    def from_2d(cls, x: int, y: int) -> "Coord":
+        return cls(x=x, y=y, z=0)
+
+    def to_tuple(self) -> tuple[int, int, int]:
+        return (self.x, self.y, self.z)
+
+    def to_2d(self) -> tuple[int, int]:
+        assert self.z == 0, "Expected z=0 for 2D coordinate, got z={}".format(self.z)
+        return (self.x, self.y)
+
+    def __add__(self, delta: "Delta") -> "Coord":
+        return Coord(x=self.x + delta.x, y=self.y + delta.y, z=self.z + delta.z)
+
+    def __sub__(self, other: "Coord") -> "Delta":
+        return Delta(x=self.x - other.x, y=self.y - other.y, z=self.z - other.z)
+
+    def manhattan_distance(self, other: "Coord") -> int:
+        delta = self - other
+        return abs(delta.x) + abs(delta.y) + abs(delta.z)
+
+    def chess_distance(self, other: "Coord") -> int:
+        delta = self - other
+        return max(abs(delta.x), abs(delta.y), abs(delta.z))
+
+
+@dataclass(frozen=True, eq=True, order=True)
+class Delta:
+    """A 3D delta, represented as a tuple of (x, y, z).
+
+    For 2D deltas, z should be 0.
+    """
+
+    x: int
+    y: int
+    z: int
+
+    @classmethod
+    def zero(cls) -> "Delta":
+        return cls(x=0, y=0, z=0)
+
+    @classmethod
+    def from_tuple(cls, value: tuple[int, int, int]) -> "Delta":
+        (x, y, z) = value
+        return cls(x=x, y=y, z=z)
+
+    @classmethod
+    def from_coord(cls, coord: Coord) -> "Delta":
+        return cls(x=coord.x, y=coord.y, z=coord.z)
+
+    @classmethod
+    def from_2d(cls, x: int, y: int) -> "Delta":
+        return cls(x=x, y=y, z=0)
+
+    def to_tuple(self) -> tuple[int, int, int]:
+        return (self.x, self.y, self.z)
+
+    def to_coord(self) -> Coord:
+        return Coord.from_tuple(self.to_tuple())
+
+    def to_2d(self) -> tuple[int, int]:
+        assert self.z == 0, "Expected z=0 for 2D delta, got z={}".format(self.z)
+        return (self.x, self.y)
+
+    @classmethod
+    def parse_from_direction(cls, direction: str) -> "Delta":
+        if direction in ["N", "U"]:
+            return Deltas2d.NORTH
+        elif direction in ["E", "R"]:
+            return Deltas2d.EAST
+        elif direction in ["S", "D"]:
+            return Deltas2d.SOUTH
+        elif direction in ["W", "L"]:
+            return Deltas2d.WEST
+        elif direction in ["NE", "UR"]:
+            return Deltas2d.NORTHEAST
+        elif direction in ["SE", "DR"]:
+            return Deltas2d.SOUTHEAST
+        elif direction in ["SW", "DL"]:
+            return Deltas2d.SOUTHWEST
+        elif direction in ["NW", "UL"]:
+            return Deltas2d.NORTHWEST
+        else:
+            raise ValueError(f"Could not guess delta from direction {direction}")
+
+    def __add__(self, other: "Delta") -> "Delta":
+        return Delta(x=self.x + other.x, y=self.y + other.y, z=self.z + other.z)
+
+    def __mul__(self, scalar: int) -> "Delta":
+        return Delta(x=self.x * scalar, y=self.y * scalar, z=self.z * scalar)
+
+    def manhattan_distance(self) -> int:
+        return abs(self.x) + abs(self.y) + abs(self.z)
+
+    def chess_distance(self) -> int:
+        return max(abs(self.x), abs(self.y), abs(self.z))
+
+
+class Deltas2d:
+    """Constants for common deltas."""
+
+    NORTH = Delta(x=0, y=-1, z=0)
+    EAST = Delta(x=1, y=0, z=0)
+    SOUTH = Delta(x=0, y=1, z=0)
+    WEST = Delta(x=-1, y=0, z=0)
+
+    NORTHEAST = Delta(x=1, y=-1, z=0)
+    SOUTHEAST = Delta(x=1, y=1, z=0)
+    SOUTHWEST = Delta(x=-1, y=1, z=0)
+    NORTHWEST = Delta(x=-1, y=-1, z=0)
+
+    CARDINAL: list[Delta] = [NORTH, EAST, SOUTH, WEST]
+    """The four cardinal directions in 2D, represented as a list of deltas.
+
+    The cardinal directions are north/east/south/west.
+    """
+
+    ORDINAL: list[Delta] = [NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST]
+    """The four ordinal directions in 2D, represented as a list of deltas.
+
+    The ordinal directions are north-east/south-east/south-west/north-west.
+    """
+
+    ALL: list[Delta] = CARDINAL + ORDINAL
+    """All eight directions in 2D, represented as a list of deltas.
+
+    The directions are up/right/down/left/up-right/down-right/down-left/up-left.
+    """
+
+
+@given(st.integers(), st.integers(), st.integers(), st.integers())
+def test_delta(x: int, y: int, dx: int, dy: int) -> None:
+    coord = Coord.from_2d(x, y)
+    delta = Delta.from_2d(dx, dy)
+    if delta > Delta.zero():
+        assert coord + delta > coord
+        assert (coord + delta).manhattan_distance(coord) > 0
+        assert (coord + delta).chess_distance(coord) > 0
+
+
+class DenseGrid(Generic[T]):
+    """A 3D grid of values, stored in a list of lists.
+
+    This uses O(n^3) memory, where n is the dimensions of the grid, i.e. it is
+    dense.
+    """
+
+    def __init__(self, cells: list[list[list[T]]]) -> None:
+        self._cells = cells
+
+    @classmethod
+    def from_2d(cls, rows: list[list[T]]) -> "DenseGrid[T]":
         """Create a new grid from the given rows.
 
         The first row is the top row, and the first element of each row is the
@@ -309,44 +407,58 @@ class DenseGrid2d(Generic[T]):
                     [len(row) for row in rows]
                 )
             )
-        self._rows = rows
+        return cls([rows])
 
-    def __getitem__(self, coord: Coord2d) -> T:
+    def __getitem__(self, coord: Coord) -> T:
         """Get the value at the given coordinate."""
-        (x, y) = coord
-        return self._rows[y][x]
+        (x, y, z) = coord.to_tuple()
+        return self._cells[z][y][x]
 
-    def __setitem__(self, coord: Coord2d, value: T) -> None:
+    def __setitem__(self, coord: Coord, value: T) -> None:
         """Set the value at the given coordinate."""
-        (x, y) = coord
-        self._rows[y][x] = value
+        (x, y, z) = coord.to_tuple()
+        self._cells[z][y][x] = value
 
     @property
     def width(self) -> int:
         """The width of the grid, i.e. the number of columns."""
-        if len(self._rows) > 0:
-            return len(self._rows[0])
+        if len(self._cells) > 0 and len(self._cells[0]) > 0:
+            return len(self._cells[0][0])
         else:
             return 0
 
     @property
     def height(self) -> int:
         """The height of the grid, i.e. the number of rows."""
-        return len(self._rows)
+        if len(self._cells) > 0:
+            return len(self._cells[0])
+        else:
+            return 0
 
-    def iter_left_edge(self) -> Iterable[tuple[Coord2d, T]]:
+    @property
+    def depth(self) -> int:
+        """The depth of the grid, i.e. the number of layers."""
+        return len(self._cells)
+
+    def is_2d(self) -> bool:
+        """Return whether the grid is 2D, i.e. has only one layer."""
+        return self.depth == 1
+
+    def iter_left_edge(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over the left edge of the grid, from top to bottom."""
+        assert self.is_2d()
         for y in range(self.height):
-            coord = (0, y)
+            coord = Coord(0, y, 0)
             yield (coord, self[coord])
 
-    def iter_right_edge(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_right_edge(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over the right edge of the grid, from top to bottom."""
+        assert self.is_2d()
         for y in range(self.height):
-            coord = (self.width - 1, y)
+            coord = Coord(self.width - 1, y, 0)
             yield (coord, self[coord])
 
-    def iter_vertical_edges(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_vertical_edges(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over the left and right edges of the grid, from top to
         bottom.
 
@@ -357,19 +469,21 @@ class DenseGrid2d(Generic[T]):
             itertools.chain(self.iter_left_edge(), self.iter_right_edge())
         )
 
-    def iter_top_edge(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_top_edge(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over the top edge of the grid, from left to right."""
+        assert self.is_2d()
         for x in range(self.width):
-            coord = (x, 0)
+            coord = Coord(x, 0, 0)
             yield (coord, self[coord])
 
-    def iter_bottom_edge(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_bottom_edge(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over the bottom edge of the grid, from left to right."""
+        assert self.is_2d()
         for x in range(self.width):
-            coord = (x, self.height - 1)
+            coord = Coord(x, self.height - 1, 0)
             yield (coord, self[coord])
 
-    def iter_horizontal_edges(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_horizontal_edges(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over the top and bottom edges of the grid, from left to
         right.
 
@@ -380,7 +494,7 @@ class DenseGrid2d(Generic[T]):
             itertools.chain(self.iter_top_edge(), self.iter_bottom_edge())
         )
 
-    def iter_edges(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_edges(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over all edges of the grid, from left to right, then top to
         bottom.
 
@@ -390,13 +504,14 @@ class DenseGrid2d(Generic[T]):
             itertools.chain(self.iter_horizontal_edges(), self.iter_vertical_edges())
         )
 
-    def iter_coords(self) -> Iterable[Coord2d]:
+    def iter_coords(self) -> Iterable[Coord]:
         """Iterate over all coordinates in the grid, in some order."""
-        for y in range(self.height):
-            for x in range(self.width):
-                yield (x, y)
+        for z in range(self.depth):
+            for y in range(self.height):
+                for x in range(self.width):
+                    yield Coord(x, y, z)
 
-    def iter_cells(self) -> Iterable[tuple[Coord2d, T]]:
+    def iter_cells(self) -> Iterable[tuple[Coord, T]]:
         """Iterate over all coordinates and values in the grid, in some
         order.
         """
@@ -405,34 +520,35 @@ class DenseGrid2d(Generic[T]):
 
     def iter_delta(
         self,
-        start: Coord2d,
-        delta: Delta2d,
+        start: Coord,
+        delta: Delta,
         *,
         include_start: bool = True,
-    ) -> Iterable[tuple[Coord2d, T]]:
+    ) -> Iterable[tuple[Coord, T]]:
         """Iterate over all coordinates and values in the grid, starting at
         the given coordinate and moving in the given direction.
 
         If include_start is False, the start coordinate is not yielded.
         """
-        (x, y) = start
-        (dx, dy) = delta
-        while 0 <= x < self.width and 0 <= y < self.height:
-            coord = (x, y)
+        (x, y, z) = start.to_tuple()
+        (dx, dy, dz) = delta.to_tuple()
+        while 0 <= x < self.width and 0 <= y < self.height and 0 <= z < self.depth:
+            coord = Coord(x, y, z)
             if coord == start and not include_start:
                 pass
             else:
                 yield (coord, self[coord])
             x += dx
             y += dy
+            z += dz
 
     def iter_deltas(
         self,
-        start: Coord2d,
-        deltas: Iterable[Delta2d],
+        start: Coord,
+        deltas: Iterable[Delta],
         *,
         include_start: bool = True,
-    ) -> Iterable[tuple[Coord2d, T, Delta2d]]:
+    ) -> Iterable[tuple[Coord, T, Delta]]:
         """Iterate over all coordinates and values in the grid, starting at
         the given coordinate and moving in the given directions.
 
@@ -445,71 +561,74 @@ class DenseGrid2d(Generic[T]):
                 yield (coord, value, delta)
 
 
-def test_grid2d() -> None:
-    with pytest.raises(ValueError, match="All rows must be the same length"):
-        DenseGrid2d([["a", "b"], ["c"]])
+def test_grid() -> None:
+    C = Coord.from_2d
+    D = Delta.from_2d
 
-    grid = DenseGrid2d([["a", "b"], ["c", "d"]])
-    assert grid[(0, 0)] == "a"
-    assert grid[(1, 0)] == "b"
-    assert grid[(0, 1)] == "c"
-    assert grid[(1, 1)] == "d"
+    with pytest.raises(ValueError, match="All rows must be the same length"):
+        DenseGrid.from_2d([["a", "b"], ["c"]])
+
+    grid = DenseGrid.from_2d([["a", "b"], ["c", "d"]])
+    assert grid[C(0, 0)] == "a"
+    assert grid[C(1, 0)] == "b"
+    assert grid[C(0, 1)] == "c"
+    assert grid[C(1, 1)] == "d"
     assert grid.width == 2
     assert grid.height == 2
 
-    assert list(grid.iter_left_edge()) == [((0, 0), "a"), ((0, 1), "c")]
-    assert list(grid.iter_right_edge()) == [((1, 0), "b"), ((1, 1), "d")]
+    assert list(grid.iter_left_edge()) == [(C(0, 0), "a"), (C(0, 1), "c")]
+    assert list(grid.iter_right_edge()) == [(C(1, 0), "b"), (C(1, 1), "d")]
     assert list(grid.iter_vertical_edges()) == [
-        ((0, 0), "a"),
-        ((0, 1), "c"),
-        ((1, 0), "b"),
-        ((1, 1), "d"),
+        (C(0, 0), "a"),
+        (C(0, 1), "c"),
+        (C(1, 0), "b"),
+        (C(1, 1), "d"),
     ]
-    assert list(grid.iter_top_edge()) == [((0, 0), "a"), ((1, 0), "b")]
-    assert list(grid.iter_bottom_edge()) == [((0, 1), "c"), ((1, 1), "d")]
+    assert list(grid.iter_top_edge()) == [(C(0, 0), "a"), (C(1, 0), "b")]
+    assert list(grid.iter_bottom_edge()) == [(C(0, 1), "c"), (C(1, 1), "d")]
     assert list(grid.iter_horizontal_edges()) == [
-        ((0, 0), "a"),
-        ((1, 0), "b"),
-        ((0, 1), "c"),
-        ((1, 1), "d"),
+        (C(0, 0), "a"),
+        (C(1, 0), "b"),
+        (C(0, 1), "c"),
+        (C(1, 1), "d"),
     ]
     assert list(grid.iter_edges()) == [
-        ((0, 0), "a"),
-        ((1, 0), "b"),
-        ((0, 1), "c"),
-        ((1, 1), "d"),
+        (C(0, 0), "a"),
+        (C(1, 0), "b"),
+        (C(0, 1), "c"),
+        (C(1, 1), "d"),
     ]
 
-    assert list(grid.iter_coords()) == [(0, 0), (1, 0), (0, 1), (1, 1)]
+    assert list(grid.iter_coords()) == [C(0, 0), C(1, 0), C(0, 1), C(1, 1)]
     assert list(grid.iter_cells()) == [
-        ((0, 0), "a"),
-        ((1, 0), "b"),
-        ((0, 1), "c"),
-        ((1, 1), "d"),
+        (C(0, 0), "a"),
+        (C(1, 0), "b"),
+        (C(0, 1), "c"),
+        (C(1, 1), "d"),
     ]
-    assert list(grid.iter_delta((0, 0), (1, 0))) == [
-        ((0, 0), "a"),
-        ((1, 0), "b"),
+    assert list(grid.iter_delta(C(0, 0), D(1, 0))) == [
+        (C(0, 0), "a"),
+        (C(1, 0), "b"),
     ]
-    assert list(grid.iter_delta((0, 0), (1, 0), include_start=False)) == [
-        ((1, 0), "b"),
+    assert list(grid.iter_delta(C(0, 0), D(1, 0), include_start=False)) == [
+        (C(1, 0), "b"),
     ]
-    assert list(grid.iter_delta((0, 0), (1, 1))) == [
-        ((0, 0), "a"),
-        ((1, 1), "d"),
+    assert list(grid.iter_delta(C(0, 0), D(1, 1))) == [
+        (C(0, 0), "a"),
+        (C(1, 1), "d"),
     ]
-    assert list(grid.iter_delta((0, 0), (1, 1), include_start=False)) == [
-        ((1, 1), "d"),
+    assert list(grid.iter_delta(C(0, 0), D(1, 1), include_start=False)) == [
+        (C(1, 1), "d"),
     ]
-    assert list(grid.iter_deltas((0, 0), [(1, 0), (1, 1)])) == [
-        ((0, 0), "a", (1, 0)),
-        ((1, 0), "b", (1, 0)),
-        ((0, 0), "a", (1, 1)),
-        ((1, 1), "d", (1, 1)),
+    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(1, 1)])) == [
+        (C(0, 0), "a", D(1, 0)),
+        (C(1, 0), "b", D(1, 0)),
+        (C(0, 0), "a", D(1, 1)),
+        (C(1, 1), "d", D(1, 1)),
     ]
-    assert list(grid.iter_deltas((0, 0), [(1, 0), (1, 1)], include_start=False)) == [
-        ((1, 0), "b", (1, 0)),
-        ((1, 1), "d", (1, 1)),
+    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(1, 1)], include_start=False)) == [
+        (C(1, 0), "b", D(1, 0)),
+        (C(1, 1), "d", D(1, 1)),
     ]
 
 
