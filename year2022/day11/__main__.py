@@ -38,6 +38,7 @@ Monkey 3:
 PART_1_ANSWER = 10605
 PART_2_ANSWER = 2713310158
 
+
 @dataclass
 class Monkey:
     items: list[int]
@@ -46,6 +47,7 @@ class Monkey:
     if_true_throw: int
     if_false_throw: int
     inspection_count: int
+
 
 Input = list[Monkey]
 
@@ -59,14 +61,16 @@ def parse_input(input: str) -> Input:
         [_, test] = test.split("by ")
         [_, iftrue] = iftrue.split("monkey ")
         [_, iffalse] = iffalse.split("monkey ")
-        result.append(Monkey(
-            items=[int(item) for item in items2],
-            operation=operation2,
-            divisibility=int(test),
-            if_true_throw=int(iftrue),
-            if_false_throw=int(iffalse),
-            inspection_count=0,
-        ))
+        result.append(
+            Monkey(
+                items=[int(item) for item in items2],
+                operation=operation2,
+                divisibility=int(test),
+                if_true_throw=int(iftrue),
+                if_false_throw=int(iffalse),
+                inspection_count=0,
+            )
+        )
     return result
 
 
