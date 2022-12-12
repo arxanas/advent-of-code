@@ -35,6 +35,7 @@ __all__ = [
     "only",
     "product_float",
     "product_int",
+    "ShortestPath",
     "split_into_groups_of_size_n",
     "split_into_n_groups_exn",
     "split_line_groups",
