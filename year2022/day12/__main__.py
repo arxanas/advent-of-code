@@ -33,36 +33,30 @@ def value_to_int(value: str) -> int:
 
 
 def shortest_path(
-    grid: Input, start_coords: set[utils.Coord], end_coord: utils.Coord
+    grid: Input, start_coords: list[utils.Coord], end_coord: utils.Coord
 ) -> int:
-    best_lengths: dict[utils.Coord, int] = {coord: 0 for coord in start_coords}
-    queue = collections.deque(start_coords)
-    while queue:
-        current_coord = queue.popleft()
-        if current_coord == end_coord:
-            return best_lengths[current_coord]
+    class ShortestPath(utils.ShortestPath):
+        def get_neighbors(self, coord: utils.Coord) -> list[tuple[utils.Coord, int]]:
+            current_value = grid[coord]
+            return [
+                (neighbor, 1)
+                for delta in utils.Deltas2d.CARDINAL
+                if (neighbor := coord + delta) in grid
+                if value_to_int(grid[neighbor]) - value_to_int(current_value) <= 1
+            ]
 
-        current_value = grid[current_coord]
-        neighbors = [
-            coord
-            for delta in utils.Deltas2d.CARDINAL
-            if (coord := current_coord + delta) in grid
-            if value_to_int(grid[coord]) - value_to_int(current_value) <= 1
-        ]
-
-        current_length = best_lengths[current_coord]
-        for neighbor in neighbors:
-            new_length = current_length + 1
-            if new_length < best_lengths.get(neighbor, float("inf")):
-                best_lengths[neighbor] = new_length
-                queue.append(neighbor)
-    raise ValueError("No path found")
+    result = ShortestPath().run(start_coords, [end_coord])
+    return min(length for (length, _) in result.values())
 
 
 def part1(grid: Input) -> int:
-    start_coord = next(coord for (coord, value) in grid.iter_cells() if value == "S")
-    end_coord = next(coord for (coord, value) in grid.iter_cells() if value == "E")
-    return shortest_path(grid, {start_coord}, end_coord)
+    start_coord = utils.only_exn(
+        coord for (coord, value) in grid.iter_cells() if value == "S"
+    )
+    end_coord = utils.only_exn(
+        coord for (coord, value) in grid.iter_cells() if value == "E"
+    )
+    return shortest_path(grid, [start_coord], end_coord)
 
 
 def test_part1() -> None:
@@ -70,12 +64,14 @@ def test_part1() -> None:
 
 
 def part2(grid: Input) -> int:
-    start_coords = {
+    start_coords = [
         coord
         for (coord, value) in grid.iter_cells()
         if value_to_int(value) == value_to_int("a")
-    }
-    end_coord = next(coord for (coord, value) in grid.iter_cells() if value == "E")
+    ]
+    end_coord = utils.only_exn(
+        coord for (coord, value) in grid.iter_cells() if value == "E"
+    )
     return shortest_path(grid, start_coords, end_coord)
 
 

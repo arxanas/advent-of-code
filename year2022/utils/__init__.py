@@ -16,7 +16,7 @@ from ._funs import (
     transpose_lines,
     unique_ordered,
 )
-from ._grid import Coord, Delta, Deltas2d, DenseGrid
+from ._grid import Coord, Delta, Deltas2d, DenseGrid, ShortestPath
 from ._parse import split_line_groups
 
 __all__ = [

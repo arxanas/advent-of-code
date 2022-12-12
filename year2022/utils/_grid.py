@@ -1,6 +1,7 @@
+import collections
 import itertools
 from dataclasses import dataclass
-from typing import Generic, Iterable, TypeVar
+from typing import Generic, Iterable, Optional, TypeVar
 
 import pytest
 from hypothesis import given
@@ -322,19 +323,27 @@ class DenseGrid(Generic[T]):
         delta: Delta,
         *,
         include_start: bool = True,
+        max_steps: Optional[int] = None,
     ) -> Iterable[tuple[Coord, T]]:
         """Iterate over all coordinates and values in the grid, starting at
         the given coordinate and moving in the given direction.
 
-        If include_start is False, the start coordinate is not yielded.
+        If `include_start` is False, the start coordinate is not yielded.
+        If `max_steps` is not None, at most `max_steps` coordinates are yielded.
+        (Note that this interacts with `include_start` to include or exclude the
+        start coordinate.)
         """
         (x, y, z) = start.to_tuple()
         (dx, dy, dz) = delta.to_tuple()
+        i = 0
         while 0 <= x < self.width and 0 <= y < self.height and 0 <= z < self.depth:
             coord = Coord(x, y, z)
             if coord == start and not include_start:
                 pass
             else:
+                i += 1
+                if max_steps is not None and i > max_steps:
+                    return
                 yield (coord, self[coord])
             x += dx
             y += dy
@@ -345,16 +354,21 @@ class DenseGrid(Generic[T]):
         start: Coord,
         deltas: Iterable[Delta],
         *,
-        include_start: bool = True,
+        max_steps: Optional[int] = None,
     ) -> Iterable[tuple[Coord, T, Delta]]:
         """Iterate over all coordinates and values in the grid, starting at
         the given coordinate and moving in the given directions.
 
-        If include_start is False, the start coordinate is not yielded.
+        See `iter_delta` for the meanings of the keyword parameters. The value
+        of `include_start` is always set to `False`, since it would otherwise be
+        included in multiple results.
         """
         for delta in deltas:
             for (coord, value) in self.iter_delta(
-                start=start, delta=delta, include_start=include_start
+                start=start,
+                delta=delta,
+                include_start=False,
+                max_steps=max_steps,
             ):
                 yield (coord, value, delta)
 
@@ -419,12 +433,97 @@ def test_grid() -> None:
         (C(1, 1), "d"),
     ]
     assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(1, 1)])) == [
-        (C(0, 0), "a", D(1, 0)),
-        (C(1, 0), "b", D(1, 0)),
-        (C(0, 0), "a", D(1, 1)),
-        (C(1, 1), "d", D(1, 1)),
-    ]
-    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(1, 1)], include_start=False)) == [
         (C(1, 0), "b", D(1, 0)),
         (C(1, 1), "d", D(1, 1)),
     ]
+
+
+def test_grid_iter_deltas_max_steps() -> None:
+    C = Coord.from_2d
+    D = Delta.from_2d
+
+    grid = DenseGrid.from_2d(
+        [["a", "b", "c", "d"], ["e", "f", "g", "h"], ["i", "j", "k", "l"]]
+    )
+    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(0, 1)], max_steps=1)) == [
+        (C(1, 0), "b", D(1, 0)),
+        (C(0, 1), "e", D(0, 1)),
+    ]
+    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(0, 1)], max_steps=2)) == [
+        (C(1, 0), "b", D(1, 0)),
+        (C(2, 0), "c", D(1, 0)),
+        (C(0, 1), "e", D(0, 1)),
+        (C(0, 2), "i", D(0, 1)),
+    ]
+
+
+class ShortestPath(Generic[T]):
+    """Generic shortest path algorithm.
+
+    You should subclass this class and override the `get_neighbors` method.
+
+    Only integral distances are supported. The graph must be finite, or at
+    least, the `get_neighbors` method should produce a finite subgraph of the
+    original graph when queried.
+    """
+
+    def __init__(self) -> None:
+        self._best_lengths: dict[T, tuple[int, list[T]]] = {}
+
+    def get_neighbors(self, node: T) -> list[tuple[T, int]]:
+        """Returns a list of (neighbor, distance) pairs for the given node.
+
+        Should be overridden by the implementor.
+        """
+        raise NotImplementedError
+
+    def run(
+        self, start_nodes: list[T], end_nodes: list[T]
+    ) -> dict[T, tuple[int, list[T]]]:
+        """Find the shortest paths from any of the start nodes to any of the end
+        nodes.
+
+        Returns a dictionary mapping each end node to a tuple of the length of
+        the shortest path and the path itself. If no path exists for a given end
+        node, there will be no entry in the dictionary for that node. If
+        multiple shortest paths exist, it is not specified which one will be
+        returned.
+        """
+        self._best_lengths = {node: (0, [node]) for node in start_nodes}
+        end_nodes2 = set(end_nodes)
+        queue = collections.deque[T](start_nodes)
+        while queue:
+            current_node = queue.popleft()
+            if current_node in end_nodes2:
+                continue
+            (current_length, current_path) = self._best_lengths[current_node]
+            for (neighbor, distance) in self.get_neighbors(current_node):
+                new_length = current_length + distance
+                should_enqueue = False
+                neighbor_info = self._best_lengths.get(neighbor)
+                if neighbor_info is None:
+                    should_enqueue = True
+                else:
+                    (neighbor_length, _neighbor_path) = neighbor_info
+                    if new_length < neighbor_length:
+                        should_enqueue = True
+                if should_enqueue:
+                    self._best_lengths[neighbor] = (
+                        new_length,
+                        current_path + [neighbor],
+                    )
+                    queue.append(neighbor)
+
+        return {k: v for (k, v) in self._best_lengths.items() if k in end_nodes2}
+
+
+def test_shortest_path() -> None:
+    class MyShortestPath(ShortestPath[int]):
+        def get_neighbors(self, node: int) -> list[tuple[int, int]]:
+            if node >= 20:
+                return []
+            else:
+                return [(node + 2, 2), (node + 3, 3)]
+
+    shortest_path = MyShortestPath()
+    assert shortest_path.run([1], [9]) == {9: (8, [1, 3, 6, 9])}
