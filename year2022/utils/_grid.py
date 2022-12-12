@@ -212,6 +212,11 @@ class DenseGrid(Generic[T]):
         (x, y, z) = coord.to_tuple()
         self._cells[z][y][x] = value
 
+    def __contains__(self, coord: Coord) -> bool:
+        """Return whether the given coordinate is in the grid."""
+        (x, y, z) = coord.to_tuple()
+        return 0 <= x < self.width and 0 <= y < self.height and 0 <= z < self.depth
+
     @property
     def width(self) -> int:
         """The width of the grid, i.e. the number of columns."""
