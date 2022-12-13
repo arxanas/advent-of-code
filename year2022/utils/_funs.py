@@ -279,3 +279,44 @@ def test_product_float() -> None:
 def clamp_int(value: int, min_value: int, max_value: int) -> int:
     """Return the given value, clamped to the given range."""
     return max(min(value, max_value), min_value)
+
+
+def split(
+    iterable: Iterable[T], predicate: Callable[[T], bool]
+) -> Iterable[Iterable[T]]:
+    """Split the given iterable into sub-iterables whenever the given predicate
+    returns True.
+    """
+    current: list[T] = []
+    for elem in iterable:
+        if predicate(elem):
+            yield current
+            current = []
+        else:
+            current.append(elem)
+    if current:
+        yield current
+
+
+def test_split() -> None:
+    assert list(split([1, 2, 3, 4, 5], lambda x: x == 3)) == [[1, 2], [4, 5]]
+    assert list(split([1, 2, 3, 4, 5], lambda x: x == 6)) == [[1, 2, 3, 4, 5]]
+    assert list(split([1, 2, 3, 4, 5], lambda x: x % 2 == 0)) == [[1], [3], [5]]
+
+
+def find(
+    iterable: Iterable[T], predicate: Callable[[T], bool]
+) -> Optional[tuple[int, T]]:
+    """Return the first element in the given iterable for which the given
+    predicate returns True, along with its index. If no such element is found,
+    return None.
+    """
+    for i, elem in enumerate(iterable):
+        if predicate(elem):
+            return (i, elem)
+    return None
+
+
+def test_find() -> None:
+    assert find([1, 2, 3, 4, 5], lambda x: x == 3) == (2, 3)
+    assert find([1, 2, 3, 4, 5], lambda x: x == 6) is None
