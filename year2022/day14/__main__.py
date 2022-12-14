@@ -30,26 +30,16 @@ def draw_lines(input: Input) -> set[u.Coord]:
     grid: set[u.Coord] = set()
     for rock in input:
         for lhs, rhs in zip(rock, rock[1:]):
-            if lhs.x == rhs.x:
-                start_y, end_y = sorted((lhs.y, rhs.y))
-                for y in range(start_y, end_y + 1):
-                    grid.add(u.Coord.from_2d(lhs.x, y))
-            elif lhs.y == rhs.y:
-                start_x, end_x = sorted((lhs.x, rhs.x))
-                for x in range(start_x, end_x + 1):
-                    grid.add(u.Coord.from_2d(x, lhs.y))
-            else:
-                raise ValueError(f"Invalid line: {lhs!r} -> {rhs!r}")
+            for coord in lhs.between(rhs):
+                grid.add(coord)
     return grid
 
 
 def part1(input: Input) -> int:
     grid = {coord: "#" for coord in draw_lines(input)}
-    start = u.Coord.from_2d(500, 0)
     result = 0
-    floor_y = 10000
     while True:
-        next = find_dest(set(grid.keys()), start, floor_y=floor_y)
+        next = find_dest(set(grid.keys()), start=u.Coord.from_2d(500, 0), floor_y=10000)
         if next is None:
             break
         grid[next] = "o"
@@ -73,11 +63,11 @@ def find_dest(grid: set[u.Coord], start: u.Coord, floor_y: int) -> Optional[u.Co
     assert start not in grid
     current = start
     while True:
-        next = current + u.Deltas2d.SOUTH
+        next = current.south()
         if next in grid:
-            next = current + u.Deltas2d.SOUTHWEST
+            next = current.south().west()
             if next in grid:
-                next = current + u.Deltas2d.SOUTHEAST
+                next = current.south().east()
                 if next in grid:
                     break
         if next.y == floor_y:
@@ -96,17 +86,17 @@ def part2(input: Input) -> int:
     floor_y = max(coord.y for coord in grid.keys()) + 2
 
     result = 0
-    queue = [start]
-    while queue:
-        next = queue.pop()
+    stack = [start]
+    while stack:
+        next = stack.pop()
         if next in grid or next.y >= floor_y:
             continue
 
         grid[next] = "o"
         result += 1
-        queue.append(next + u.Deltas2d.SOUTH)
-        queue.append(next + u.Deltas2d.SOUTHEAST)
-        queue.append(next + u.Deltas2d.SOUTHWEST)
+        stack.append(next.south())
+        stack.append(next.south().east())
+        stack.append(next.south().west())
     return result
 
 

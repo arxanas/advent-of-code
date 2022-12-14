@@ -62,6 +62,27 @@ class Coord:
         delta = self - other
         return max(abs(delta.x), abs(delta.y), abs(delta.z))
 
+    def north(self) -> "Coord":
+        return self + Deltas2d.NORTH
+
+    def east(self) -> "Coord":
+        return self + Deltas2d.EAST
+
+    def south(self) -> "Coord":
+        return self + Deltas2d.SOUTH
+
+    def west(self) -> "Coord":
+        return self + Deltas2d.WEST
+
+    def between(self, other: "Coord") -> Iterable["Coord"]:
+        (min_x, max_x) = sorted((self.x, other.x))
+        (min_y, max_y) = sorted((self.y, other.y))
+        (min_z, max_z) = sorted((self.z, other.z))
+        for x in range(min_x, max_x + 1):
+            for y in range(min_y, max_y + 1):
+                for z in range(min_z, max_z + 1):
+                    yield Coord(x=x, y=y, z=z)
+
 
 @dataclass(frozen=True, eq=True, order=True)
 class Delta:
