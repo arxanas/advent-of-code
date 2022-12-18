@@ -17,7 +17,7 @@ from ._funs import (
     transpose_lines,
     unique_ordered,
 )
-from ._grid import Coord, Delta, Deltas2d, DenseGrid, ShortestPath
+from ._grid import Coord, Delta, Deltas2d, Deltas3d, DenseGrid, ShortestPath
 from ._parse import split_line_groups
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     "count",
     "Delta",
     "Deltas2d",
+    "Deltas3d",
     "DenseGrid",
     "floyd_warshall",
     "InclusiveInterval",

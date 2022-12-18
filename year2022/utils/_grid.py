@@ -188,6 +188,14 @@ class Deltas2d:
     """
 
 
+class Deltas3d:
+    CARDINAL = Deltas2d.CARDINAL + [Delta(x=0, y=0, z=1), Delta(x=0, y=0, z=-1)]
+    """The six cardinal directions in 3D, represented as a list of deltas.
+
+    The cardinal directions are north/east/south/west/in/out.
+    """
+
+
 @given(st.integers(), st.integers(), st.integers(), st.integers())
 def test_delta(x: int, y: int, dx: int, dy: int) -> None:
     coord = Coord.from_2d(x, y)
