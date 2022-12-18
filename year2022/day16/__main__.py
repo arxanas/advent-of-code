@@ -6,6 +6,8 @@ import sys
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple, TypeVar
 
+from .. import utils as u
+
 TEST_INPUT = """
 Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
@@ -34,56 +36,6 @@ class ValveInfo:
 Input = Dict[ValveName, ValveInfo]
 
 T = TypeVar("T")
-
-
-def floyd_warshall(adjacency: Dict[T, Dict[T, int]]) -> Dict[Tuple[T, T], int]:
-    # https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
-    distances: Dict[Tuple[T, T], int] = {}
-    for node, neighbors in adjacency.items():
-        distances[node, node] = 0
-        for (neighbor, distance) in neighbors.items():
-            distances[node, neighbor] = distance
-
-    for k in adjacency:
-        for i in adjacency:
-            for j in adjacency:
-                ik = distances.get((i, k))
-                if ik is None:
-                    continue
-                kj = distances.get((k, j))
-                if kj is None:
-                    continue
-                ij = distances.get((i, j))
-                if ij is None:
-                    distances[i, j] = ik + kj
-                else:
-                    distances[i, j] = min(ij, ik + kj)
-    return distances
-
-
-def test_floyd_warshall() -> None:
-    adjacency = {
-        "A": {"B": 1, "C": 5},
-        "B": {"C": 2},
-        "C": {"D": 1},
-        "D": {"B": 1},
-    }
-    distances = floyd_warshall(adjacency)
-    assert distances == {
-        ("A", "A"): 0,
-        ("A", "B"): 1,
-        ("A", "C"): 3,
-        ("A", "D"): 4,
-        ("B", "B"): 0,
-        ("B", "C"): 2,
-        ("B", "D"): 3,
-        ("C", "B"): 2,
-        ("C", "C"): 0,
-        ("C", "D"): 1,
-        ("D", "B"): 1,
-        ("D", "C"): 3,
-        ("D", "D"): 0,
-    }
 
 
 def parse_input(input: str) -> Input:
@@ -144,7 +96,7 @@ def part1(input: Input) -> int:
         name: {neighbor: 1 for neighbor in info.neighbors if name != neighbor}
         for name, info in input.items()
     }
-    distances = floyd_warshall(adjacency)
+    distances = u.floyd_warshall(adjacency)
     assert any(v > 1 for v in distances.values())  # Sanity check.
 
     non_zero_valves = [name for (name, info) in input.items() if info.flow_rate > 0]
@@ -161,7 +113,7 @@ def part2(input: Input) -> int:
         name: {neighbor: 1 for neighbor in info.neighbors if name != neighbor}
         for name, info in input.items()
     }
-    distances = floyd_warshall(adjacency)
+    distances = u.floyd_warshall(adjacency)
 
     non_zero_valves = {name for (name, info) in input.items() if info.flow_rate > 0}
     best_score = 0

@@ -320,3 +320,53 @@ def find(
 def test_find() -> None:
     assert find([1, 2, 3, 4, 5], lambda x: x == 3) == (2, 3)
     assert find([1, 2, 3, 4, 5], lambda x: x == 6) is None
+
+
+def floyd_warshall(adjacency: dict[T, dict[T, int]]) -> dict[tuple[T, T], int]:
+    # https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+    distances: dict[tuple[T, T], int] = {}
+    for node, neighbors in adjacency.items():
+        distances[node, node] = 0
+        for (neighbor, distance) in neighbors.items():
+            distances[node, neighbor] = distance
+
+    for k in adjacency:
+        for i in adjacency:
+            for j in adjacency:
+                ik = distances.get((i, k))
+                if ik is None:
+                    continue
+                kj = distances.get((k, j))
+                if kj is None:
+                    continue
+                ij = distances.get((i, j))
+                if ij is None:
+                    distances[i, j] = ik + kj
+                else:
+                    distances[i, j] = min(ij, ik + kj)
+    return distances
+
+
+def test_floyd_warshall() -> None:
+    adjacency = {
+        "A": {"B": 1, "C": 5},
+        "B": {"C": 2},
+        "C": {"D": 1},
+        "D": {"B": 1},
+    }
+    distances = floyd_warshall(adjacency)
+    assert distances == {
+        ("A", "A"): 0,
+        ("A", "B"): 1,
+        ("A", "C"): 3,
+        ("A", "D"): 4,
+        ("B", "B"): 0,
+        ("B", "C"): 2,
+        ("B", "D"): 3,
+        ("C", "B"): 2,
+        ("C", "C"): 0,
+        ("C", "D"): 1,
+        ("D", "B"): 1,
+        ("D", "C"): 3,
+        ("D", "D"): 0,
+    }
