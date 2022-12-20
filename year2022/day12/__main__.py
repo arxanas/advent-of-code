@@ -32,18 +32,21 @@ def value_to_int(value: str) -> int:
 def shortest_path(
     grid: Input, start_coords: list[utils.Coord], end_coord: utils.Coord
 ) -> int:
-    class ShortestPath(utils.ShortestPath):
-        def get_neighbors(self, coord: utils.Coord) -> list[tuple[utils.Coord, int]]:
+    class ShortestPath(utils.BestPath):
+        def get_neighbors(self, coord: utils.Coord) -> list[utils.Coord]:
             current_value = grid[coord]
             return [
-                (neighbor, 1)
+                neighbor
                 for delta in utils.Deltas2d.CARDINAL
                 if (neighbor := coord + delta) in grid
                 if value_to_int(grid[neighbor]) - value_to_int(current_value) <= 1
             ]
 
-    result = ShortestPath().run(start_coords, [end_coord])
-    return min(length for (length, _) in result.values())
+        def is_end_node(self, coord: utils.Coord) -> bool:
+            return coord == end_coord
+
+    result = ShortestPath().find_all(start_coords)
+    return min(len(path) for path in result.values())
 
 
 def part1(grid: Input) -> int:

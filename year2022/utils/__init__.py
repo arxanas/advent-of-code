@@ -17,7 +17,7 @@ from ._funs import (
     transpose_lines,
     unique_ordered,
 )
-from ._grid import Coord, Delta, Deltas2d, Deltas3d, DenseGrid, ShortestPath
+from ._grid import Coord, Delta, Deltas2d, Deltas3d, DenseGrid, BestPath
 from ._parse import split_line_groups
 
 __all__ = [
@@ -38,7 +38,7 @@ __all__ = [
     "only",
     "product_float",
     "product_int",
-    "ShortestPath",
+    "BestPath",
     "split_into_groups_of_size_n",
     "split_into_n_groups_exn",
     "split_line_groups",

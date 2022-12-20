@@ -62,6 +62,10 @@ def solve(
     distances: Dict[Tuple[ValveName, ValveName], int],
     total_minutes: int,
 ) -> Tuple[int, Dict[ValveName, int]]:
+    class Solution(u.BestPath):
+        def get_score_key(self, lhs: list[T], rhs: list[T]) -> bool:
+            return super().get_score_key(lhs, rhs)
+
     initial_solution = {"AA": 0}
     stack: List[Dict[ValveName, int]] = [initial_solution]
     best_solution: Tuple[int, Dict[ValveName, int]] = (

@@ -1,7 +1,7 @@
 import collections
 import itertools
 from dataclasses import dataclass
-from typing import Generic, Iterable, Optional, TypeVar
+from typing import Generic, Iterable, Optional, Protocol, Self, TypeVar
 
 import pytest
 from hypothesis import given
@@ -486,10 +486,17 @@ def test_grid_iter_deltas_max_steps() -> None:
     ]
 
 
-class ShortestPath(Generic[T]):
-    """Generic shortest path algorithm.
+class SupportsLessThan(Protocol):
+    def __lt__(self, other: object) -> bool:
+        ...
 
-    You should subclass this class and override the `get_neighbors` method.
+
+TNode = TypeVar("TNode")
+TScore = TypeVar("TScore", bound=SupportsLessThan)
+
+
+class BestPath(Generic[T]):
+    """Generic shortest/longest path algorithm.
 
     Only integral distances are supported. The graph must be finite, or at
     least, the `get_neighbors` method should produce a finite subgraph of the
@@ -497,18 +504,37 @@ class ShortestPath(Generic[T]):
     """
 
     def __init__(self) -> None:
-        self._best_lengths: dict[T, tuple[int, list[T]]] = {}
+        self._best_paths: dict[T, list[T]] = {}
 
-    def get_neighbors(self, node: T) -> list[tuple[T, int]]:
-        """Returns a list of (neighbor, distance) pairs for the given node.
+    def get_progress_key(self, _node: T) -> Optional[str]:
+        """Returns a key for the given node. If implemented, when the key
+        increases in value, a message will be printed out with the new key.
+        """
+        return None
+
+    def get_score_key(self, node: T) -> int:
+        """Returns True if lhs is a "better" path than rhs.
+
+        Defaults to finding the shortest path. Can be overridden by the
+        implementor.
+        """
+        return len(lhs)
+
+    def get_neighbors(self, node: T) -> list[T]:
+        """Returns a list of neighbor pairs for the given node.
 
         Should be overridden by the implementor.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
-    def run(
-        self, start_nodes: list[T], end_nodes: list[T]
-    ) -> dict[T, tuple[int, list[T]]]:
+    def is_end_node(self, node: T) -> bool:
+        """Returns True if the given node is an end node.
+
+        Should be overridden by the implementor.
+        """
+        raise NotImplementedError()
+
+    def find_all(self, start_nodes: list[T]) -> dict[T, list[T]]:
         """Find the shortest paths from any of the start nodes to any of the end
         nodes.
 
@@ -518,41 +544,51 @@ class ShortestPath(Generic[T]):
         multiple shortest paths exist, it is not specified which one will be
         returned.
         """
-        self._best_lengths = {node: (0, [node]) for node in start_nodes}
-        end_nodes2 = set(end_nodes)
+        self._best_paths = {node: [] for node in start_nodes}
         queue = collections.deque[T](start_nodes)
+        progress_key = None
         while queue:
             current_node = queue.popleft()
-            if current_node in end_nodes2:
+            current_progress_key = self.get_progress_key(current_node)
+            if current_progress_key is not None:
+                if progress_key is None or current_progress_key > progress_key:
+                    progress_key = current_progress_key
+                    print(f"Progress: {progress_key}")
+
+            if self.is_end_node(current_node):
                 continue
-            (current_length, current_path) = self._best_lengths[current_node]
-            for (neighbor, distance) in self.get_neighbors(current_node):
-                new_length = current_length + distance
+            current_path = self._best_paths[current_node]
+            for neighbor in self.get_neighbors(current_node):
                 should_enqueue = False
-                neighbor_info = self._best_lengths.get(neighbor)
+                neighbor_info = self._best_paths.get(neighbor)
+                new_path = current_path + [neighbor]
                 if neighbor_info is None:
                     should_enqueue = True
                 else:
-                    (neighbor_length, _neighbor_path) = neighbor_info
-                    if new_length < neighbor_length:
+                    neighbor_path = neighbor_info
+                    if self.get_score_key(new_path, neighbor_path):
                         should_enqueue = True
                 if should_enqueue:
-                    self._best_lengths[neighbor] = (
-                        new_length,
-                        current_path + [neighbor],
-                    )
+                    self._best_paths[neighbor] = new_path
                     queue.append(neighbor)
 
-        return {k: v for (k, v) in self._best_lengths.items() if k in end_nodes2}
+        return {k: v for (k, v) in self._best_paths.items() if self.is_end_node(k)}
+
+    def find_one(self, start_node: T) -> Optional[list[T]]:
+        """Find a shortest path from the start node to any of the end nodes."""
+        raise NotImplementedError()
 
 
 def test_shortest_path() -> None:
-    class MyShortestPath(ShortestPath[int]):
-        def get_neighbors(self, node: int) -> list[tuple[int, int]]:
+    class ShortestPath(BestPath[int]):
+        def get_neighbors(self, node: int) -> list[int]:
             if node >= 20:
                 return []
             else:
-                return [(node + 2, 2), (node + 3, 3)]
+                return [(node + 2), (node + 3)]
 
-    shortest_path = MyShortestPath()
-    assert shortest_path.run([1], [9]) == {9: (8, [1, 3, 6, 9])}
+        def is_end_node(self, node: int) -> bool:
+            return node == 9
+
+    shortest_path = ShortestPath()
+    assert shortest_path.find_all([1]) == {9: [1, 3, 6, 9]}
