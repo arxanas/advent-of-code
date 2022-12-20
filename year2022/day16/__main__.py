@@ -4,7 +4,7 @@ import math
 import re
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Set, Tuple, TypeVar
+from typing import Dict, Iterable, List, Set, Tuple, TypeVar
 
 from .. import utils as u
 
@@ -63,8 +63,31 @@ def solve(
     total_minutes: int,
 ) -> Tuple[int, Dict[ValveName, int]]:
     class Solution(u.BestPath):
-        def get_score_key(self, lhs: list[T], rhs: list[T]) -> bool:
-            return super().get_score_key(lhs, rhs)
+        def get_score_key(self, path: List[Dict[ValveName, int]]) -> object:
+            return -score(input, path[-1], total_minutes=total_minutes)
+
+        def is_end_node(self, node: Dict[ValveName, int]) -> bool:
+            return max(node.values()) == total_minutes
+
+        def get_neighbors(
+            self, current: Dict[ValveName, int]
+        ) -> Iterable[Dict[ValveName, int]]:
+            (current_valve, current_time) = max(current.items(), key=lambda x: x[1])
+            neighbors = non_zero_valves - set(current.keys())
+            for neighbor in neighbors:
+                distance = distances.get((current_valve, neighbor))
+                if distance is None:
+                    continue
+                new_time = current_time + distance + 1
+                if new_time <= total_minutes:
+                    yield {**current, neighbor: new_time}
+
+    solution = Solution()
+    best_solution = solution.find_one({"AA": 0}, search_strategy="stack")
+    assert best_solution is not None
+    best_path = best_solution[-1]
+    best_score = score(input, best_path, total_minutes=total_minutes)
+    return (best_score, best_path)
 
     initial_solution = {"AA": 0}
     stack: List[Dict[ValveName, int]] = [initial_solution]

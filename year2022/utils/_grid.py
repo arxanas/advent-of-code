@@ -1,7 +1,7 @@
 import collections
 import itertools
 from dataclasses import dataclass
-from typing import Generic, Iterable, Optional, Protocol, Self, TypeVar
+from typing import Generic, Iterable, Literal, Optional, Protocol, Self, TypeVar, cast
 
 import pytest
 from hypothesis import given
@@ -491,10 +491,6 @@ class SupportsLessThan(Protocol):
         ...
 
 
-TNode = TypeVar("TNode")
-TScore = TypeVar("TScore", bound=SupportsLessThan)
-
-
 class BestPath(Generic[T]):
     """Generic shortest/longest path algorithm.
 
@@ -503,24 +499,19 @@ class BestPath(Generic[T]):
     original graph when queried.
     """
 
-    def __init__(self) -> None:
-        self._best_paths: dict[T, list[T]] = {}
-
     def get_progress_key(self, _node: T) -> Optional[str]:
         """Returns a key for the given node. If implemented, when the key
         increases in value, a message will be printed out with the new key.
         """
         return None
 
-    def get_score_key(self, node: T) -> int:
-        """Returns True if lhs is a "better" path than rhs.
-
-        Defaults to finding the shortest path. Can be overridden by the
-        implementor.
+    def get_score_key(self, path: list[T]) -> SupportsLessThan:
+        """Return a value that can be used to compare the given path to other
+        paths. A smaller value indicates a better path.
         """
-        return len(lhs)
+        return cast(SupportsLessThan, len(path))
 
-    def get_neighbors(self, node: T) -> list[T]:
+    def get_neighbors(self, node: T) -> Iterable[T]:
         """Returns a list of neighbor pairs for the given node.
 
         Should be overridden by the implementor.
@@ -544,7 +535,7 @@ class BestPath(Generic[T]):
         multiple shortest paths exist, it is not specified which one will be
         returned.
         """
-        self._best_paths = {node: [] for node in start_nodes}
+        best_paths: dict[T, list[T]] = {node: [] for node in start_nodes}
         queue = collections.deque[T](start_nodes)
         progress_key = None
         while queue:
@@ -557,26 +548,47 @@ class BestPath(Generic[T]):
 
             if self.is_end_node(current_node):
                 continue
-            current_path = self._best_paths[current_node]
+            current_path = best_paths[current_node]
             for neighbor in self.get_neighbors(current_node):
                 should_enqueue = False
-                neighbor_info = self._best_paths.get(neighbor)
+                neighbor_info = best_paths.get(neighbor)
                 new_path = current_path + [neighbor]
                 if neighbor_info is None:
                     should_enqueue = True
                 else:
                     neighbor_path = neighbor_info
-                    if self.get_score_key(new_path, neighbor_path):
+                    if self.get_score_key(new_path) < self.get_score_key(neighbor_path):
                         should_enqueue = True
                 if should_enqueue:
-                    self._best_paths[neighbor] = new_path
+                    best_paths[neighbor] = new_path
                     queue.append(neighbor)
 
-        return {k: v for (k, v) in self._best_paths.items() if self.is_end_node(k)}
+        return {k: v for (k, v) in best_paths.items() if self.is_end_node(k)}
 
-    def find_one(self, start_node: T) -> Optional[list[T]]:
+    def find_one(
+        self, start_node: T, search_strategy: Literal["stack", "queue"] = "stack"
+    ) -> Optional[list[T]]:
         """Find a shortest path from the start node to any of the end nodes."""
-        raise NotImplementedError()
+        best_path = [start_node]
+        queue = collections.deque[list[T]]([[start_node]])
+        while queue:
+            if search_strategy == "stack":
+                current_path = queue.pop()
+            elif search_strategy == "queue":
+                current_path = queue.popleft()
+            else:
+                raise ValueError(f"Invalid search strategy: {search_strategy}")
+            current_node = current_path[-1]
+
+            if self.is_end_node(current_node):
+                if self.get_score_key(current_path) < self.get_score_key(best_path):
+                    best_path = current_path
+
+            for neighbor in self.get_neighbors(current_node):
+                if neighbor in current_path:
+                    continue
+                queue.append(current_path + [neighbor])
+        return best_path
 
 
 def test_shortest_path() -> None:
