@@ -1,7 +1,22 @@
+from __future__ import annotations
+
 import collections
+import heapq
 import itertools
 from dataclasses import dataclass
-from typing import Generic, Iterable, Literal, Optional, Protocol, Self, TypeVar, cast
+import logging
+import random
+from typing import (
+    Deque,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    TypeVar,
+    cast,
+)
+from typing_extensions import Literal, Protocol
 
 import pytest
 from hypothesis import given
@@ -499,33 +514,65 @@ class BestPath(Generic[T]):
     original graph when queried.
     """
 
-    def get_progress_key(self, _node: T) -> Optional[str]:
+    def get_progress_key(self, _path: Sequence[T]) -> Optional[str]:
         """Returns a key for the given node. If implemented, when the key
         increases in value, a message will be printed out with the new key.
         """
         return None
 
-    def get_score_key(self, path: list[T]) -> SupportsLessThan:
+    def get_score_key(self, path: Sequence[T]) -> SupportsLessThan:
         """Return a value that can be used to compare the given path to other
         paths. A smaller value indicates a better path.
         """
         return cast(SupportsLessThan, len(path))
 
-    def get_neighbors(self, node: T) -> Iterable[T]:
-        """Returns a list of neighbor pairs for the given node.
+    def get_heuristic_key(self, path: Sequence[T]) -> SupportsLessThan:
+        """Return a value that can be used to compare the given path to other
+        paths. A smaller value indicates a better path.
+
+        Used for the `heap` strategy of `find_one` to decide how to order the
+        heap. Unlike `get_score_key`, the heuristic doesn't have to be exact,
+        and can mis-order comparisons (at the cost of efficiency rather than
+        correctness).
+        """
+        return self.get_score_key(path)
+
+    def get_neighbors(self, path: Sequence[T]) -> Iterable[T]:
+        """Returns a list of neighbor pairs for the last node in the provided
+        path.
 
         Should be overridden by the implementor.
         """
         raise NotImplementedError()
 
-    def is_end_node(self, node: T) -> bool:
-        """Returns True if the given node is an end node.
+    def is_end_path(self, path: Sequence[T]) -> bool:
+        """Returns True if this is a valid end path. Note that the graph must be
+        finite, since other paths will still be explored.
 
         Should be overridden by the implementor.
         """
         raise NotImplementedError()
 
-    def find_all(self, start_nodes: list[T]) -> dict[T, list[T]]:
+    def should_prune(self, path: Sequence[T], best_path: Sequence[T]) -> bool:
+        """Returns True if this path should be pruned. This is useful for
+        pruning paths that are obviously worse than the best path.
+
+        This can also be implemented by omitting results from `get_neighbors`.
+        The difference is that `should_prune` can be called *after* the
+        neighbors have been calculated, if more information has been obtained.
+        """
+        return False
+
+    def on_new_best_path(self, old_path: Sequence[T], new_path: Sequence[T]) -> None:
+        """Called when a new best path is found, only for `find_one` (since
+        `find_all` calculates new best paths for many nodes at once, instead of
+        a single best path).
+
+        Can be overridden by the implementor. Default implementation does nothing.
+        """
+        pass
+
+    def find_all(self, start_nodes: Sequence[T]) -> dict[T, list[T]]:
         """Find the shortest paths from any of the start nodes to any of the end
         nodes.
 
@@ -535,21 +582,23 @@ class BestPath(Generic[T]):
         multiple shortest paths exist, it is not specified which one will be
         returned.
         """
-        best_paths: dict[T, list[T]] = {node: [] for node in start_nodes}
-        queue = collections.deque[T](start_nodes)
+        best_paths: dict[T, list[T]] = {node: [node] for node in start_nodes}
+        queue: Deque[T] = collections.deque(start_nodes)
         progress_key = None
         while queue:
             current_node = queue.popleft()
-            current_progress_key = self.get_progress_key(current_node)
+            current_path = best_paths[current_node]
+            current_progress_key = self.get_progress_key(current_path)
             if current_progress_key is not None:
                 if progress_key is None or current_progress_key > progress_key:
                     progress_key = current_progress_key
-                    print(f"Progress: {progress_key}")
+                    logging.info(f"Progress: {progress_key}")
 
-            if self.is_end_node(current_node):
+            if self.is_end_path(current_path) or self.should_prune(
+                current_path, best_paths[current_node]
+            ):
                 continue
-            current_path = best_paths[current_node]
-            for neighbor in self.get_neighbors(current_node):
+            for neighbor in self.get_neighbors(current_path):
                 should_enqueue = False
                 neighbor_info = best_paths.get(neighbor)
                 new_path = current_path + [neighbor]
@@ -563,43 +612,90 @@ class BestPath(Generic[T]):
                     best_paths[neighbor] = new_path
                     queue.append(neighbor)
 
-        return {k: v for (k, v) in best_paths.items() if self.is_end_node(k)}
+        return {k: v for (k, v) in best_paths.items() if self.is_end_path(v)}
 
     def find_one(
-        self, start_node: T, search_strategy: Literal["stack", "queue"] = "stack"
+        self,
+        start_node: T,
+        search_strategy: Literal[
+            "stack", "queue", "heap", "weighted-heap", "random"
+        ] = "stack",
     ) -> Optional[list[T]]:
         """Find a shortest path from the start node to any of the end nodes."""
         best_path = [start_node]
-        queue = collections.deque[list[T]]([[start_node]])
-        while queue:
+        queue: Deque[List[T]] = collections.deque([best_path])
+
+        outer = self
+
+        class HeapElem:
+            def __init__(self, path: list[T]):
+                self.path = path
+
+            def __lt__(self, other: "HeapElem") -> bool:
+                return outer.get_heuristic_key(self.path) < outer.get_heuristic_key(
+                    other.path
+                )
+
+        heap = [HeapElem(best_path)]
+
+        progress_key = None
+        while queue and heap:
             if search_strategy == "stack":
                 current_path = queue.pop()
             elif search_strategy == "queue":
                 current_path = queue.popleft()
+            elif search_strategy == "heap":
+                current_path = heapq.heappop(heap).path
+            elif search_strategy == "weighted-heap":
+                for i in range(len(heap)):
+                    if random.randint(0, i) == 0:
+                        (heap[i], heap[-1]) = (heap[-1], heap[i])
+                        break
+                current_path = heap.pop().path
+            elif search_strategy == "random":
+                index = random.randrange(len(queue))
+                (queue[index], queue[-1]) = (queue[-1], queue[index])
+                current_path = queue.pop()
             else:
-                raise ValueError(f"Invalid search strategy: {search_strategy}")
-            current_node = current_path[-1]
+                raise ValueError(f"Unknown search strategy: {search_strategy}")
+            current_progress_key = self.get_progress_key(current_path)
+            if current_progress_key is not None:
+                if progress_key is None or current_progress_key > progress_key:
+                    progress_key = current_progress_key
+                    logging.info(f"Progress: {progress_key}")
 
-            if self.is_end_node(current_node):
-                if self.get_score_key(current_path) < self.get_score_key(best_path):
+            if self.is_end_path(current_path):
+                current_score = self.get_score_key(current_path)
+                best_score = self.get_score_key(best_path)
+                if current_score < best_score:
+                    self.on_new_best_path(best_path, current_path)
                     best_path = current_path
+            if self.should_prune(current_path, best_path):
+                continue
 
-            for neighbor in self.get_neighbors(current_node):
+            for neighbor in self.get_neighbors(current_path):
                 if neighbor in current_path:
                     continue
-                queue.append(current_path + [neighbor])
+                if search_strategy in ["stack", "queue", "random"]:
+                    queue.append(current_path + [neighbor])
+                elif search_strategy in ["heap", "weighted-heap"]:
+                    heapq.heappush(heap, HeapElem(current_path + [neighbor]))
+                else:
+                    raise ValueError(f"Unknown search strategy: {search_strategy}")
         return best_path
 
 
 def test_shortest_path() -> None:
     class ShortestPath(BestPath[int]):
-        def get_neighbors(self, node: int) -> list[int]:
+        def get_neighbors(self, path: Sequence[int]) -> Iterable[int]:
+            node = path[-1]
             if node >= 20:
                 return []
             else:
                 return [(node + 2), (node + 3)]
 
-        def is_end_node(self, node: int) -> bool:
+        def is_end_path(self, path: Sequence[int]) -> bool:
+            node = path[-1]
             return node == 9
 
     shortest_path = ShortestPath()

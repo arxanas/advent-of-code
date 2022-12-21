@@ -33,7 +33,8 @@ def shortest_path(
     grid: Input, start_coords: list[utils.Coord], end_coord: utils.Coord
 ) -> int:
     class ShortestPath(utils.BestPath):
-        def get_neighbors(self, coord: utils.Coord) -> list[utils.Coord]:
+        def get_neighbors(self, path: list[utils.Coord]) -> list[utils.Coord]:
+            coord = path[-1]
             current_value = grid[coord]
             return [
                 neighbor
@@ -42,11 +43,14 @@ def shortest_path(
                 if value_to_int(grid[neighbor]) - value_to_int(current_value) <= 1
             ]
 
-        def is_end_node(self, coord: utils.Coord) -> bool:
-            return coord == end_coord
+        def is_end_path(self, path: list[utils.Coord]) -> bool:
+            if path:
+                return path[-1] == end_coord
+            else:
+                return False
 
     result = ShortestPath().find_all(start_coords)
-    return min(len(path) for path in result.values())
+    return min(len(path) - 1 for path in result.values())
 
 
 def part1(grid: Input) -> int:

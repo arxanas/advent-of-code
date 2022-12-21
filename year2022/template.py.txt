@@ -45,6 +45,7 @@ def test_part2() -> None:
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO)
     input = parse_input(sys.stdin.read())
     test_input = parse_input(TEST_INPUT)
 

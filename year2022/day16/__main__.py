@@ -4,7 +4,7 @@ import math
 import re
 import sys
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Set, Tuple, TypeVar
+from typing import Dict, Iterable, List, Sequence, Set, Tuple, TypeVar
 
 from .. import utils as u
 
@@ -63,15 +63,16 @@ def solve(
     total_minutes: int,
 ) -> Tuple[int, Dict[ValveName, int]]:
     class Solution(u.BestPath):
-        def get_score_key(self, path: List[Dict[ValveName, int]]) -> object:
+        def get_score_key(self, path: Sequence[Dict[ValveName, int]]) -> object:
             return -score(input, path[-1], total_minutes=total_minutes)
 
-        def is_end_node(self, node: Dict[ValveName, int]) -> bool:
-            return max(node.values()) == total_minutes
+        def is_end_path(self, path: Sequence[Dict[ValveName, int]]) -> bool:
+            return True
 
         def get_neighbors(
-            self, current: Dict[ValveName, int]
+            self, path: Sequence[Dict[ValveName, int]]
         ) -> Iterable[Dict[ValveName, int]]:
+            current = path[-1]
             (current_valve, current_time) = max(current.items(), key=lambda x: x[1])
             neighbors = non_zero_valves - set(current.keys())
             for neighbor in neighbors:
@@ -88,34 +89,6 @@ def solve(
     best_path = best_solution[-1]
     best_score = score(input, best_path, total_minutes=total_minutes)
     return (best_score, best_path)
-
-    initial_solution = {"AA": 0}
-    stack: List[Dict[ValveName, int]] = [initial_solution]
-    best_solution: Tuple[int, Dict[ValveName, int]] = (
-        score(input, initial_solution, total_minutes),
-        initial_solution,
-    )
-    while stack:
-        current = stack.pop()
-        if not current:
-            current_time = 0
-            current_valve = "AA"
-        else:
-            (current_valve, current_time) = max(current.items(), key=lambda x: x[1])
-        if current_time > total_minutes:
-            continue
-        current_score = score(input, current, total_minutes=total_minutes)
-        if current_score >= best_solution[0]:
-            best_solution = (current_score, current)
-
-        neighbors = non_zero_valves - set(current.keys())
-        for neighbor in neighbors:
-            distance = distances.get((current_valve, neighbor))
-            if distance is None:
-                continue
-            new_solution = {**current, neighbor: current_time + distance + 1}
-            stack.append(new_solution)
-    return best_solution
 
 
 def part1(input: Input) -> int:
