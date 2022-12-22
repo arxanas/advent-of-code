@@ -76,7 +76,9 @@ def only_exn(seq: Iterable[T]) -> T:
     for elem in seq:
         if seen_elem:
             raise ValueError(
-                "Expected only one element, but got more: {!r}".format(seq)
+                "Expected only one element, but got more: {!r}, {!r}, ... in sequence {!r}".format(
+                    to_return, elem, seq
+                )
             )
         to_return = elem
         seen_elem = True
@@ -370,3 +372,24 @@ def test_floyd_warshall() -> None:
         ("D", "C"): 3,
         ("D", "D"): 0,
     }
+
+
+def find_subsequence(input: Sequence[T], subsequence: Sequence[T]) -> Optional[int]:
+    for i in range(len(input) - len(subsequence) + 1):
+        if input[i : i + len(subsequence)] == subsequence:
+            return i
+    return None
+
+
+def test_find_subsequence() -> None:
+    assert find_subsequence([], []) == 0
+    assert find_subsequence([], [1]) is None
+    assert find_subsequence([1], []) == 0
+    assert find_subsequence([1], [1]) == 0
+    assert find_subsequence([1, 2], [1]) == 0
+    assert find_subsequence([1, 2], [2]) == 1
+    assert find_subsequence([1, 2], [1, 2]) == 0
+    assert find_subsequence([1, 2], [2, 1]) is None
+    assert find_subsequence([1, 2, 3], [1, 2]) == 0
+    assert find_subsequence([1, 2, 3], [2, 3]) == 1
+    assert find_subsequence([1, 2, 3], [3, 1]) is None
