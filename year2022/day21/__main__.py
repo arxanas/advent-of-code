@@ -94,9 +94,7 @@ def part2(input: Input) -> int:
                 # restrict the constraints such that lhs / rhs is an integer.
                 # Otherwise, we may get multiple solutions; see
                 # https://www.reddit.com/r/adventofcode/comments/zrbw7n/2022_day_21_part_2_solution_not_unique/
-                solver.add(
-                    vars[name] == vars[lhs] / vars[rhs], vars[lhs] % vars[rhs] == 0
-                )
+                solver.add(vars[name] * vars[rhs] == vars[lhs])
             case (name, instr):
                 raise ValueError(f"unknown instruction {name}: {instr}")
     assert solver.check() == z3.sat
