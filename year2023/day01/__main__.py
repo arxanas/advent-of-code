@@ -1,16 +1,5 @@
-from dataclasses import dataclass, replace
-import collections
-import functools
-import itertools
-import logging
-import math
-import os
 import re
 import sys
-
-from .. import utils as u
-
-import z3  # type: ignore[import]
 
 TEST_INPUT1 = """
 1abc2
