@@ -55,7 +55,7 @@ def part1(input: Input) -> int:
     head_pos = utils.Coord.from_2d(0, 0)
     tail_pos = utils.Coord.from_2d(0, 0)
     seen_locations: set[utils.Coord] = {tail_pos}
-    for (direction, distance) in input:
+    for direction, distance in input:
         delta = utils.Delta.parse_from_direction(direction)
         for _ in range(distance):
             head_pos += delta
@@ -72,7 +72,7 @@ def part2(input: Input) -> int:
     head_pos = utils.Coord.from_2d(0, 0)
     tail: list[utils.Coord] = [utils.Coord.from_2d(0, 0)] * 9
     seen_locations: set[utils.Coord] = {tail[-1]}
-    for (direction, distance) in input:
+    for direction, distance in input:
         delta = utils.Delta.parse_from_direction(direction)
         for _ in range(distance):
             head_pos += delta

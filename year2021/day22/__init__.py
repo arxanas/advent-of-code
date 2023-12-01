@@ -111,7 +111,7 @@ def parse_input(lines: str) -> Input:
 
 def part1(input: Input) -> object:
     cubes_on = set()
-    for (directive, (xr, yr, zr)) in input:
+    for directive, (xr, yr, zr) in input:
         for x in range(max(-50, xr[0]), min(50, xr[1]) + 1):
             for y in range(max(-50, yr[0]), min(50, yr[1]) + 1):
                 for z in range(max(-50, zr[0]), min(50, zr[1]) + 1):
@@ -197,7 +197,7 @@ def cut_ranges(r11, r12, r21, r22):
     assert r11 <= r12
     assert r21 <= r22
     points = sorted([r11, r12, r21, r22])
-    for (l, r) in zip(points, points[1:]):
+    for l, r in zip(points, points[1:]):
         rs.append((l, r))
     return sorted(set((a, b) for (a, b) in rs if r11 <= a < b <= r12))
 
@@ -286,7 +286,7 @@ def test_subtract_cubes() -> None:
 
 def part2(input: Input) -> object:
     cubes: List[Cube] = []
-    for (directive, cube) in input:
+    for directive, cube in input:
         # Cube dimensions are inclusive on both sides, but our math is exclusive
         # on the right side of a given range.
         ((x1, x2), (y1, y2), (z1, z2)) = cube

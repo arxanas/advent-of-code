@@ -44,7 +44,7 @@ def parse_input(input: str) -> Input:
 
 def part1(input: Input, y: int = 10) -> int:
     occupied_xs: set[int] = set()
-    for (sensor, beacon) in input:
+    for sensor, beacon in input:
         distance = sensor.manhattan_distance(beacon)
         remaining = distance - abs(y - sensor.y)
         occupied_xs.update(range(sensor.x - remaining, sensor.x + remaining + 1))

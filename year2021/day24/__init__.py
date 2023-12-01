@@ -33,7 +33,7 @@ def speculate_inputs(instructions: Input, digits: List[int]) -> bool:
             lhs += rhs
         return lhs
 
-    for (i, instr) in enumerate(instructions):
+    for i, instr in enumerate(instructions):
         cmd = instr[0]
         if cmd == "inp":
             if digits:

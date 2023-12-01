@@ -201,7 +201,7 @@ def invert_orientation(orientation: Orientation) -> Orientation:
 
 def compose_orientation(o1: Orientation, o2: Orientation) -> Orientation:
     result = {}
-    for (index1, v1) in o1.items():
+    for index1, v1 in o1.items():
         v2 = o2[v1[1]]
         index2 = v2[1]
         negate = v1[0] != v2[0]
@@ -237,8 +237,8 @@ def problem(input: Input) -> None:
     }
 
     while len(scanner_locations) < len(input):
-        for (i, scanner1) in enumerate(input):
-            for (j, scanner2) in enumerate(input):
+        for i, scanner1 in enumerate(input):
+            for j, scanner2 in enumerate(input):
                 if j == i or j in scanner_locations:
                     continue
                 assert scanner1 != scanner2
@@ -297,7 +297,7 @@ def problem(input: Input) -> None:
                             print(f"Scanner {j} at location:", scanner2_location)
 
     seen_beacons = set()
-    for (i, (scanner_location, scanner_orientation)) in scanner_locations.items():
+    for i, (scanner_location, scanner_orientation) in scanner_locations.items():
         beacons = [
             plus(scanner_location, apply_orientation(p, scanner_orientation))
             for p in input[i]

@@ -21,14 +21,14 @@ Input = List[List[int]]
 
 
 def increase_charge(grid: Input) -> None:
-    for (i, row) in enumerate(grid):
-        for (j, value) in enumerate(row):
+    for i, row in enumerate(grid):
+        for j, value in enumerate(row):
             grid[i][j] += 1
 
 
 def do_next_flash(grid: Input) -> bool:
-    for (i, row) in enumerate(grid):
-        for (j, value) in enumerate(row):
+    for i, row in enumerate(grid):
+        for j, value in enumerate(row):
             if value > 9:
                 grid[i][j] = -1
                 for di in [-1, 0, 1]:
@@ -43,8 +43,8 @@ def do_next_flash(grid: Input) -> bool:
 
 
 def reset_flashed(grid: Input) -> None:
-    for (i, row) in enumerate(grid):
-        for (j, value) in enumerate(row):
+    for i, row in enumerate(grid):
+        for j, value in enumerate(row):
             if value == -1:
                 grid[i][j] = 0
 

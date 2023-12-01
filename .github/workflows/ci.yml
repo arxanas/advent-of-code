@@ -26,11 +26,8 @@ jobs:
       - name: Lint with mypy
         run: pdm run mypy .
 
-      - name: Lint with black
-        run: pdm run black --check .
+      - name: Format with ruff
+        run: pdm run ruff format --check .
 
-      - name: Lint with isort
-        run: pdm run isort --check-only --profile black .
-
-      - name: Lint with flake8
-        run: pdm run flake8 . --count --show-source --statistics
+      - name: Lint with ruff
+        run: pdm run ruff check .

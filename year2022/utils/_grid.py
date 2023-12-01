@@ -393,7 +393,7 @@ class DenseGrid(Generic[T]):
         included in multiple results.
         """
         for delta in deltas:
-            for (coord, value) in self.iter_delta(
+            for coord, value in self.iter_delta(
                 start=start,
                 delta=delta,
                 include_start=False,
@@ -526,7 +526,7 @@ class ShortestPath(Generic[T]):
             if current_node in end_nodes2:
                 continue
             (current_length, current_path) = self._best_lengths[current_node]
-            for (neighbor, distance) in self.get_neighbors(current_node):
+            for neighbor, distance in self.get_neighbors(current_node):
                 new_length = current_length + distance
                 should_enqueue = False
                 neighbor_info = self._best_lengths.get(neighbor)

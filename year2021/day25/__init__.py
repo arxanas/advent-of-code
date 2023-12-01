@@ -23,8 +23,8 @@ def parse_input(input: str) -> Grid:
 
 def step_east(grid: Grid) -> Grid:
     new_grid = copy.deepcopy(grid)
-    for (i, row) in enumerate(grid):
-        for (j, c) in enumerate(row):
+    for i, row in enumerate(grid):
+        for j, c in enumerate(row):
             n = (j + 1) % len(row)
             if c == ">" and grid[i][n] == ".":
                 new_grid[i][j] = "."
@@ -34,8 +34,8 @@ def step_east(grid: Grid) -> Grid:
 
 def step_south(grid: Grid) -> Grid:
     new_grid = copy.deepcopy(grid)
-    for (i, row) in enumerate(grid):
-        for (j, c) in enumerate(row):
+    for i, row in enumerate(grid):
+        for j, c in enumerate(row):
             n = (i + 1) % len(grid)
             if c == "v" and grid[n][j] == ".":
                 new_grid[i][j] = "."

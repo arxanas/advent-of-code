@@ -43,7 +43,7 @@ def test_part1() -> None:
 
 def part2(input: Input) -> int:
     result = 0
-    for (r1, r2, r3) in utils.split_into_groups_of_size_n(input, 3):
+    for r1, r2, r3 in utils.split_into_groups_of_size_n(input, 3):
         common = list(set(r1) & set(r2) & set(r3))[0]
         result += priority(common)
     return result

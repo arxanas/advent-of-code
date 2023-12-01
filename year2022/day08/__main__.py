@@ -52,9 +52,7 @@ def calc_scenic_score(grid: Input, start: utils.Coord) -> int:
     scores = []
     for delta in utils.Deltas2d.CARDINAL:
         score = 0
-        for (_, value) in grid.iter_delta(
-            start=start, delta=delta, include_start=False
-        ):
+        for _, value in grid.iter_delta(start=start, delta=delta, include_start=False):
             score += 1
             if value >= grid[start]:
                 break
@@ -68,7 +66,7 @@ def part2(input: Input) -> int:
 
 def test_part2() -> None:
     grid = parse_input(TEST_INPUT)
-    for (coord, _) in grid.iter_edges():
+    for coord, _ in grid.iter_edges():
         assert calc_scenic_score(grid, coord) == 0
     assert grid[utils.Coord(2, 3, 0)] == 5
     assert calc_scenic_score(grid, utils.Coord(2, 3, 0)) == 8

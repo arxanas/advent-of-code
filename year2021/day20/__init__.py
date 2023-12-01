@@ -87,8 +87,8 @@ def parse_input(input: str) -> Input:
     enhancement = [bool(x == "#") for x in enhancement_str]
     assert len(enhancement) == 512
     image = {}
-    for (r, line) in enumerate(image_str.splitlines()):
-        for (c, char) in enumerate(line):
+    for r, line in enumerate(image_str.splitlines()):
+        for c, char in enumerate(line):
             image[r, c] = char == "#"
     return (enhancement, (False, image))
 

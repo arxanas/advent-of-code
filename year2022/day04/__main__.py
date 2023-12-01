@@ -30,7 +30,7 @@ def parse_input(input: str) -> Input:
 
 def part1(input: Input) -> int:
     result = 0
-    for (lhs, rhs) in input:
+    for lhs, rhs in input:
         lhs2 = utils.InclusiveInterval.from_tuple(lhs)
         rhs2 = utils.InclusiveInterval.from_tuple(rhs)
         if lhs2 in rhs2 or rhs2 in lhs2:
@@ -44,7 +44,7 @@ def test_part1() -> None:
 
 def part2(input: Input) -> int:
     result = 0
-    for (lhs, rhs) in input:
+    for lhs, rhs in input:
         lhs2 = utils.InclusiveInterval.from_tuple(lhs)
         rhs2 = utils.InclusiveInterval.from_tuple(rhs)
         if lhs2.overlaps(rhs2):

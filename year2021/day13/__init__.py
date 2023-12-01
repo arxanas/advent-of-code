@@ -30,7 +30,7 @@ Input = Tuple[List[Tuple[int, int]], List[Tuple[str, int]]]
 
 def fold_along(grid: Set[Tuple[int, int]], dim: str, line: int) -> Set[Tuple[int, int]]:
     result = set()
-    for (x, y) in grid:
+    for x, y in grid:
         if dim == "x":
             if x >= line:
                 x = line - (x - line)
@@ -65,7 +65,7 @@ def part1(input: Input) -> str:
 def part2(input: Input) -> str:
     (points, folds) = input
     grid = set(points)
-    for (dim, line) in folds:
+    for dim, line in folds:
         grid = fold_along(grid, dim=dim, line=line)  # type: ignore[assignment]
     print_grid(grid)
     return "(see above)"

@@ -29,12 +29,12 @@ Input = Tuple[str, List[Tuple[str, str]]]
 
 def rewrite_one(formula: str, rules: List[Tuple[str, str]]) -> str:
     insertions = {}
-    for (i, (a, b)) in enumerate(zip(formula, formula[1:])):
-        for (before, after) in rules:
+    for i, (a, b) in enumerate(zip(formula, formula[1:])):
+        for before, after in rules:
             if a + b == before:
                 insertions[i] = after
     result = ""
-    for (i, c) in enumerate(formula):
+    for i, c in enumerate(formula):
         result += c
         if i in insertions:
             result += insertions[i]
@@ -55,9 +55,9 @@ def part1(input: Input) -> str:
 
 def merge_counters(c1: Dict[str, int], c2: Dict[str, int]) -> Dict[str, int]:
     result: Counter[str] = Counter()
-    for (k, v) in c1.items():
+    for k, v in c1.items():
         result[k] += v
-    for (k, v) in c2.items():
+    for k, v in c2.items():
         result[k] += v
     return result
 
@@ -65,7 +65,7 @@ def merge_counters(c1: Dict[str, int], c2: Dict[str, int]) -> Dict[str, int]:
 def part2(input: Input) -> str:
     (formula, rules) = input
     rewrite_rules = {}
-    for (k, v) in rules:
+    for k, v in rules:
         rewrite_rules[k] = k[0] + v + k[1]
 
     rules2 = dict(rules)
@@ -86,7 +86,7 @@ def part2(input: Input) -> str:
             return result
 
     result: Dict[str, int] = Counter(formula)
-    for (a, b) in zip(formula, formula[1:]):
+    for a, b in zip(formula, formula[1:]):
         segment = a + b
         result = merge_counters(result, rewrite(segment, 40))
     [(lc_v, least_common), *_, (mc_v, most_common)] = sorted(

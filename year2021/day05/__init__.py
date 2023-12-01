@@ -31,20 +31,17 @@ def parse_input(input: str) -> Iterable[LineSegment]:
 
 
 def test_parse_input() -> None:
-    assert (
-        list(
-            parse_input(
-                """
+    assert list(
+        parse_input(
+            """
 1,2 -> 3,4
 5,6 -> 7,8
 """
-            )
         )
-        == [
-            LineSegment(start=Point(x=1, y=2), end=Point(x=3, y=4)),
-            LineSegment(start=Point(x=5, y=6), end=Point(x=7, y=8)),
-        ]
-    )
+    ) == [
+        LineSegment(start=Point(x=1, y=2), end=Point(x=3, y=4)),
+        LineSegment(start=Point(x=5, y=6), end=Point(x=7, y=8)),
+    ]
 
 
 def get_covered_points_hv(line: LineSegment) -> Iterable[Point]:
@@ -109,7 +106,7 @@ def get_covered_points_hvd(line: LineSegment) -> Iterable[Point]:
         else:
             step = -1
 
-        for (i, x) in enumerate(range(smaller_x.x, larger_x.x + 1)):
+        for i, x in enumerate(range(smaller_x.x, larger_x.x + 1)):
             y = smaller_x.y + (i * step)
             yield Point(x=x, y=y)
 

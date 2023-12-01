@@ -329,7 +329,7 @@ def floyd_warshall(adjacency: dict[T, dict[T, int]]) -> dict[tuple[T, T], int]:
     distances: dict[tuple[T, T], int] = {}
     for node, neighbors in adjacency.items():
         distances[node, node] = 0
-        for (neighbor, distance) in neighbors.items():
+        for neighbor, distance in neighbors.items():
             distances[node, neighbor] = distance
 
     for k in adjacency:
