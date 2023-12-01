@@ -51,7 +51,7 @@ class State:
 
 
 def get_moves_to_bank(state: State, bank_size: int) -> Iterable[State]:
-    for (hallway_index, amph) in enumerate(state.hallway):
+    for hallway_index, amph in enumerate(state.hallway):
         if amph is None:
             continue
         target_bank = BANK_INDEXES[amph]
@@ -80,7 +80,7 @@ def get_moves_to_bank(state: State, bank_size: int) -> Iterable[State]:
 
 
 def get_moves_to_hallway(state: State, bank_size: int) -> Iterable[State]:
-    for (bank_index, amphs) in state.banks.items():
+    for bank_index, amphs in state.banks.items():
         if not amphs:
             continue
         if all(bank_amph == bank_index for bank_amph in amphs):

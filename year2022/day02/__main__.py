@@ -15,7 +15,7 @@ def parse_input(input: str) -> Input:
 
 def part1(input: Input) -> int:
     score = 0
-    for (lhs, rhs) in input:
+    for lhs, rhs in input:
         lval = ord(lhs) - ord("A")
         rval = ord(rhs) - ord("X")
         result = (rval - lval) % 3
@@ -33,7 +33,7 @@ def test_part1() -> None:
 
 def part2(input: Input) -> int:
     score = 0
-    for (lhs, rhs) in input:
+    for lhs, rhs in input:
         lval = ord(lhs) - ord("A")
         result = (ord(rhs) - ord("X") - 1) % 3
         rval = (lval + result) % 3

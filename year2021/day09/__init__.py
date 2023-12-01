@@ -22,8 +22,8 @@ def get_adjacent(
 
 
 def get_low_points(input: Input) -> Iterable[Tuple[int, int]]:
-    for ((row, col), value) in input.items():
-        for (_, adj_value) in get_adjacent(input, row, col):
+    for (row, col), value in input.items():
+        for _, adj_value in get_adjacent(input, row, col):
             if not (value < adj_value):
                 break
         else:
@@ -32,8 +32,8 @@ def get_low_points(input: Input) -> Iterable[Tuple[int, int]]:
 
 def part1(input: Input) -> str:
     risk_scores = []
-    for ((row, col), value) in input.items():
-        for (_, adj_value) in get_adjacent(input, row, col):
+    for (row, col), value in input.items():
+        for _, adj_value in get_adjacent(input, row, col):
             if not (value < adj_value):
                 break
         else:
@@ -58,7 +58,7 @@ def visit_basin(
         return
     visited.add((row, col))
 
-    for ((adj_row, adj_col), adj_value) in get_adjacent(input, row, col):
+    for (adj_row, adj_col), adj_value in get_adjacent(input, row, col):
         if adj_value > value:
             visit_basin(input, visited, adj_row, adj_col)
 
@@ -66,7 +66,7 @@ def visit_basin(
 def part2(input: Input) -> int:
     low_points = list(get_low_points(input))
     basins = []
-    for (row, col) in low_points:
+    for row, col in low_points:
         basins.append(get_basin(input, row, col))
     top_basins = sorted(basins, key=len, reverse=True)[:3]
     return reduce(lambda x, y: x * y, (len(x) for x in top_basins))
@@ -75,8 +75,8 @@ def part2(input: Input) -> int:
 def parse_input(input: str) -> Input:
     input = input.strip()
     result = {}
-    for (row, line) in enumerate(input.splitlines()):
-        for (col, char) in enumerate(line):
+    for row, line in enumerate(input.splitlines()):
+        for col, char in enumerate(line):
             result[row, col] = int(char)
     return result
 

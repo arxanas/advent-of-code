@@ -40,7 +40,7 @@ def parse_input(input: str) -> Input:
 def part1(input: Input) -> str:
     (crates, moves) = input
     crates = copy.deepcopy(crates)
-    for (move, from_, to) in moves:
+    for move, from_, to in moves:
         to = utils.assert_in_bounds(crates, to - 1)
         from_ = utils.assert_in_bounds(crates, from_ - 1)
         for _ in range(move):
@@ -56,7 +56,7 @@ def test_part1() -> None:
 def part2(input: Input) -> str:
     (crates, moves) = input
     crates = copy.deepcopy(crates)
-    for (move, from_, to) in moves:
+    for move, from_, to in moves:
         to = utils.assert_in_bounds(crates, to - 1)
         from_ = utils.assert_in_bounds(crates, from_ - 1)
         to_move = []

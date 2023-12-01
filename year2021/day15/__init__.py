@@ -87,7 +87,7 @@ def part2(small_input: Input) -> str:
     input = {}
     for dr in range(5):
         for dc in range(5):
-            for ((r, c), cost) in small_input.items():
+            for (r, c), cost in small_input.items():
                 c2 = cost + dr + dc
                 while c2 > 9:
                     c2 -= 9
@@ -97,8 +97,8 @@ def part2(small_input: Input) -> str:
 
 def parse_input(input: str) -> Input:
     grid = {}
-    for (row, line) in enumerate(input.strip().splitlines()):
-        for (col, c) in enumerate(line):
+    for row, line in enumerate(input.strip().splitlines()):
+        for col, c in enumerate(line):
             grid[row, col] = int(c)
     return grid
 

@@ -23,7 +23,7 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
 
 def part1(input: List[Tuple[List[str], List[str]]]) -> str:
     count = 0
-    for (_, outputs) in input:
+    for _, outputs in input:
         for output_val in outputs:
             if len(output_val) in [2, 3, 4, 7]:
                 count += 1
@@ -122,7 +122,7 @@ def decode_digit(assignment: Dict[str, int], signals: str) -> int:
     for char in "abcdefg":
         if char in signals:
             bits[assignment[char]] = 1
-    for (number, number_signals) in NUMBERS.items():
+    for number, number_signals in NUMBERS.items():
         if number_signals == bits:
             return number
     raise ValueError(
@@ -174,7 +174,7 @@ def test_decode() -> None:
 
 def part2(input: List[Tuple[List[str], List[str]]]) -> str:
     result = 0
-    for (input_val, output_val) in input:
+    for input_val, output_val in input:
         assignment = search(input_val + output_val, {})
         print(input_val + output_val)
         print(assignment)

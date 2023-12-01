@@ -50,7 +50,7 @@ def parse_input(input: str) -> Input:
 
 def compare(lhs: Packet, rhs: Packet) -> int:
     if isinstance(lhs, list) and isinstance(rhs, list):
-        for (l, r) in itertools.zip_longest(lhs, rhs):
+        for l, r in itertools.zip_longest(lhs, rhs):
             if l is None:
                 return -1
             elif r is None:
@@ -82,7 +82,7 @@ def part2(input: Input) -> int:
     packet1: Packet = [[2]]
     packet2: Packet = [[6]]
     all_packets: list[Packet] = [packet1, packet2]
-    for (lhs, rhs) in input:
+    for lhs, rhs in input:
         all_packets.append(lhs)
         all_packets.append(rhs)
     all_packets.sort(key=functools.cmp_to_key(compare))

@@ -22,7 +22,7 @@ def simx(fishes: List[int], x: int) -> List[int]:
 
 def simulate_lanternfish2(fishes: Dict[int, int]) -> Dict[int, int]:
     result: Counter[int] = Counter()
-    for (fish, count) in fishes.items():
+    for fish, count in fishes.items():
         if fish == 0:
             result[8] += count
             result[6] += count
