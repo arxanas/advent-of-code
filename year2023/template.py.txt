@@ -1,9 +1,9 @@
 from dataclasses import dataclass, replace
-import collections
-import functools
-import itertools
-import logging
-import math
+from collections import Counter, defaultdict, deque
+from functools import *
+from itertools import *
+from logging import *
+from math import *
 import os
 import re
 import sys
