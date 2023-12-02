@@ -7,7 +7,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from . import all_same, unique_ordered
+from . import all_same, minmax, unique_ordered
 
 T = TypeVar("T")
 
@@ -402,7 +402,7 @@ class DenseGrid(Generic[T]):
                 yield (coord, value, delta)
 
 
-def test_grid() -> None:
+def test_dense_grid() -> None:
     C = Coord.from_2d
     D = Delta.from_2d
 
@@ -467,7 +467,7 @@ def test_grid() -> None:
     ]
 
 
-def test_grid_iter_deltas_max_steps() -> None:
+def test_dense_grid_iter_deltas_max_steps() -> None:
     C = Coord.from_2d
     D = Delta.from_2d
 
@@ -484,6 +484,84 @@ def test_grid_iter_deltas_max_steps() -> None:
         (C(0, 1), "e", D(0, 1)),
         (C(0, 2), "i", D(0, 1)),
     ]
+
+
+class SparseGrid(Generic[T]):
+    def __init__(self, cells: dict[Coord, T]) -> None:
+        self._cells = cells
+
+    def __repr__(self) -> str:
+        return "SparseGrid({!r})".format(self._cells)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, SparseGrid) and self._cells == other._cells
+
+    def __getitem__(self, coord: Coord) -> T:
+        """Get the value at the given coordinate."""
+        return self._cells[coord]
+
+    def __setitem__(self, coord: Coord, value: T) -> None:
+        """Set the value at the given coordinate."""
+        self._cells[coord] = value
+
+    def __delitem__(self, coord: Coord) -> None:
+        """Delete the value at the given coordinate."""
+        del self._cells[coord]
+
+    def __contains__(self, coord: Coord) -> bool:
+        """Return whether the given coordinate has been assigned in the grid."""
+        return coord in self._cells
+
+    def __len__(self) -> int:
+        """Return the number of coordinates that have been assigned in the
+        grid.
+        """
+        return len(self._cells)
+
+    def width(self) -> int:
+        """Return the implied width of the grid, starting from the coordinate with the
+        least x-coordinate and ending at the coordinate with the greatest x-coordinate.
+        """
+        (min_x, max_x) = minmax(c.x for c in self._cells.keys())
+        return max_x - min_x + 1
+
+    def height(self) -> int:
+        """Return the implied height of the grid, starting from the coordinate with the
+        least y-coordinate and ending at the coordinate with the greatest y-coordinate.
+        """
+        (min_y, max_y) = minmax(c.y for c in self._cells.keys())
+        return max_y - min_y + 1
+
+    def dump(self) -> str:
+        """Dump the grid to a string, with the top row first."""
+        if len(self._cells) == 0:
+            return ""
+        (min_x, max_x) = minmax(c.x for c in self._cells.keys())
+        (min_y, max_y) = minmax(c.y for c in self._cells.keys())
+        lines = []
+        for y in range(min_y, max_y + 1):
+            line = []
+            for x in range(min_x, max_x + 1):
+                line.append(str(self._cells.get(Coord(x, y, 0), ".")))
+            lines.append("".join(line))
+        return "\n".join(lines)
+
+    def copy(self) -> "SparseGrid[T]":
+        """Return a copy of the grid."""
+        return SparseGrid(cells=self._cells.copy())
+
+    def get(self, coord: Coord, default: T) -> T:
+        """Get the value at the given coordinate, or the default value if the
+        coordinate has not been assigned in the grid.
+        """
+        return self._cells.get(coord, default)
+
+    def iter_cells(self) -> Iterable[tuple[Coord, T]]:
+        """Iterate over all coordinates and values in the grid, in some
+        order.
+        """
+        for coord, value in self._cells.items():
+            yield (coord, value)
 
 
 class ShortestPath(Generic[T]):

@@ -1,7 +1,14 @@
 import functools
 import itertools
 import operator
-from typing import Callable, Iterable, Optional, Sequence, TypeVar, cast
+from typing import (
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    TypeVar,
+    cast,
+)
 
 import pytest
 from hypothesis import given
@@ -393,3 +400,20 @@ def test_find_subsequence() -> None:
     assert find_subsequence([1, 2, 3], [1, 2]) == 0
     assert find_subsequence([1, 2, 3], [2, 3]) == 1
     assert find_subsequence([1, 2, 3], [3, 1]) is None
+
+
+def minmax(iterable: Iterable[T]) -> tuple[T, T]:
+    """Return the minimum and maximum elements in the given iterable."""
+    iterator = iter(iterable)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        raise ValueError("Iterable is empty")
+    min_elem = first
+    max_elem = first
+    for elem in iterator:
+        if elem < min_elem:  # type: ignore[operator]
+            min_elem = elem
+        if elem > max_elem:  # type: ignore[operator]
+            max_elem = elem
+    return min_elem, max_elem
