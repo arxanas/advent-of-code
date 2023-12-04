@@ -20,8 +20,10 @@ from ._funs import (
 )
 from ._grid import Coord, Delta, Deltas2d, Deltas3d, DenseGrid, ShortestPath, SparseGrid
 from ._parse import split_line_groups
+from ._run import Solution
 
 __all__ = [
+    "Solution",
     "all_different",
     "all_same",
     "assert_in_bounds",
