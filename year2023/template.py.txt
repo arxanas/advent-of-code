@@ -14,30 +14,25 @@ from .. import utils as u
 
 Input = str
 
+TEST_INPUT1 = """
+TODO
+"""
+
+TEST_INPUT2 = TEST_INPUT1
 
 PART_1_ANSWER = 0
 PART_2_ANSWER = 0
 
 
 def test_part1() -> None:
-    assert (
-        Solution().part1(Solution().parse_input(Solution.TEST_INPUT1)) == PART_1_ANSWER
-    )
+    assert Solution().part1(Solution().parse_input(TEST_INPUT1)) == PART_1_ANSWER
 
 
 def test_part2() -> None:
-    assert (
-        Solution().part2(Solution().parse_input(Solution.TEST_INPUT2)) == PART_2_ANSWER
-    )
+    assert Solution().part2(Solution().parse_input(TEST_INPUT2)) == PART_2_ANSWER
 
 
 class Solution(u.Solution[Input]):
-    TEST_INPUT1 = """
-TODO
-"""
-
-    TEST_INPUT2 = TEST_INPUT1
-
     def parse_input(self, input: str) -> Input:
         return input.strip()
 
