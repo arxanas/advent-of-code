@@ -13,16 +13,6 @@ _YEAR_RE = re.compile(r"year(\d+)")
 
 
 class Solution(Generic[TInput], ABC):
-    @property
-    @abstractmethod
-    def TEST_INPUT1(self) -> str:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def TEST_INPUT2(self) -> str:
-        raise NotImplementedError()
-
     @abstractmethod
     def parse_input(self, input: str) -> TInput:
         raise NotImplementedError()
@@ -61,23 +51,26 @@ class Solution(Generic[TInput], ABC):
         input_path = self._class_def_path().parent / "input"
         if not input_path.exists():
             logging.info("Downloading input...")
-            subprocess.check_call(
-                [
-                    "aoc",
-                    "download",
-                    "--input-only",
-                    "--year",
-                    str(self.year()),
-                    "--day",
-                    str(self.day()),
-                    "--input-file",
-                    str(input_path),
-                ]
-            )
+            try:
+                subprocess.check_call(
+                    [
+                        "aoc",
+                        "download",
+                        "--input-only",
+                        "--year",
+                        str(self.year()),
+                        "--day",
+                        str(self.day()),
+                        "--input-file",
+                        str(input_path),
+                    ]
+                )
+            except FileNotFoundError as e:
+                raise RuntimeError(
+                    "Could not download input. (Does the `aoc` binary exist? Install with `cargo install aoc-cli`.)"
+                ) from e
         input_str = input_path.read_text()
         input = self.parse_input(input_str)
 
-        print("test 1:", self.part1(self.parse_input(self.TEST_INPUT1)))
         print("part 1:", self.part1(input))
-        print("test 2:", self.part2(self.parse_input(self.TEST_INPUT2)))
         print("part 2:", self.part2(input))
