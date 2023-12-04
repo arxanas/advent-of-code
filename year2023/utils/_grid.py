@@ -1,7 +1,7 @@
 import collections
 import itertools
 from dataclasses import dataclass
-from typing import Generic, Iterable, Optional, TypeVar
+from typing import Generic, Iterable, Optional, TypeVar, overload
 
 import pytest
 from hypothesis import given
@@ -10,6 +10,7 @@ from hypothesis import strategies as st
 from . import all_same, minmax, unique_ordered
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -246,6 +247,23 @@ class DenseGrid(Generic[T]):
         """Return whether the given coordinate is in the grid."""
         (x, y, z) = coord.to_tuple()
         return 0 <= x < self.width and 0 <= y < self.height and 0 <= z < self.depth
+
+    @overload
+    def get(self, coord: Coord, default: U) -> T | U:
+        ...
+
+    @overload
+    def get(self, coord: Coord) -> T | None:
+        ...
+
+    def get(self, coord: Coord, default: object = None) -> object:
+        """Get the value at the given coordinate, or `None` if the coordinate is
+        not in the grid.
+        """
+        if coord in self:
+            return self[coord]
+        else:
+            return default
 
     @property
     def width(self) -> int:
@@ -550,9 +568,17 @@ class SparseGrid(Generic[T]):
         """Return a copy of the grid."""
         return SparseGrid(cells=self._cells.copy())
 
-    def get(self, coord: Coord, default: T) -> T:
-        """Get the value at the given coordinate, or the default value if the
-        coordinate has not been assigned in the grid.
+    @overload
+    def get(self, coord: Coord, default: U) -> T | U:
+        ...
+
+    @overload
+    def get(self, coord: Coord) -> T | None:
+        ...
+
+    def get(self, coord: Coord, default: object = None) -> object:
+        """Get the value at the given coordinate, or `None` if the coordinate is
+        not in the grid.
         """
         return self._cells.get(coord, default)
 
