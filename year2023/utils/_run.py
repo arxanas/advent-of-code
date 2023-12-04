@@ -1,6 +1,7 @@
 import inspect
 import logging
 import re
+import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Generic, TypeVar
@@ -37,6 +38,18 @@ class Solution(Generic[TInput], ABC):
     def _class_def_path(self) -> Path:
         return Path(inspect.getfile(self.__class__))
 
+    def year(self) -> int:
+        dir = self._class_def_path().parent.parent.name
+        match = _YEAR_RE.match(dir)
+        assert match is not None, f"Could not extract year from directory {dir!r}"
+        return int(match.group(1))
+
+    def day(self) -> int:
+        dir = self._class_def_path().parent.name
+        match = _DAY_RE.match(dir)
+        assert match is not None, f"Could not extract day from directory {dir!r}"
+        return int(match.group(1))
+
     def main(self) -> None:
         # https://stackoverflow.com/a/44175370/344643
         logging.basicConfig(
@@ -46,6 +59,21 @@ class Solution(Generic[TInput], ABC):
         )
 
         input_path = self._class_def_path().parent / "input"
+        if not input_path.exists():
+            logging.info("Downloading input...")
+            subprocess.check_call(
+                [
+                    "aoc",
+                    "download",
+                    "--input-only",
+                    "--year",
+                    str(self.year()),
+                    "--day",
+                    str(self.day()),
+                    "--input-file",
+                    str(input_path),
+                ]
+            )
         input_str = input_path.read_text()
         input = self.parse_input(input_str)
 
