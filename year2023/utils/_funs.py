@@ -417,3 +417,8 @@ def minmax(iterable: Iterable[T]) -> tuple[T, T]:
         if elem > max_elem:  # type: ignore[operator]
             max_elem = elem
     return min_elem, max_elem
+
+
+def flatten(iterable: Iterable[Iterable[T]]) -> Iterable[T]:
+    """Flatten the given iterable of iterables into a single iterable."""
+    return itertools.chain.from_iterable(iterable)

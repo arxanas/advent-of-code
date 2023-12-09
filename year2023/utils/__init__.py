@@ -5,6 +5,7 @@ from ._funs import (
     assert_in_bounds,
     clamp_int,
     count,
+    flatten,
     floyd_warshall,
     maybe_strip_prefix,
     minmax,
@@ -19,11 +20,10 @@ from ._funs import (
     unique_ordered,
 )
 from ._grid import Coord, Delta, Deltas2d, Deltas3d, DenseGrid, ShortestPath, SparseGrid
-from ._parse import split_line_groups
+from ._parse import extract_int_list, extract_int_list_pairs, split_line_groups
 from ._run import Solution
 
 __all__ = [
-    "Solution",
     "all_different",
     "all_same",
     "assert_in_bounds",
@@ -34,6 +34,9 @@ __all__ = [
     "Deltas2d",
     "Deltas3d",
     "DenseGrid",
+    "extract_int_list_pairs",
+    "extract_int_list",
+    "flatten",
     "floyd_warshall",
     "InclusiveInterval",
     "maybe_strip_prefix",
@@ -43,6 +46,7 @@ __all__ = [
     "product_float",
     "product_int",
     "ShortestPath",
+    "Solution",
     "SparseGrid",
     "split_into_groups_of_size_n",
     "split_into_n_groups_exn",
