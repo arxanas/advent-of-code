@@ -150,6 +150,9 @@ class Delta:
     def __mul__(self, scalar: int) -> "Delta":
         return Delta(x=self.x * scalar, y=self.y * scalar, z=self.z * scalar)
 
+    def invert(self) -> "Delta":
+        return self * -1
+
     def manhattan_distance(self) -> int:
         return abs(self.x) + abs(self.y) + abs(self.z)
 
