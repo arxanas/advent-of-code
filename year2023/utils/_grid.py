@@ -1,7 +1,7 @@
-import collections
+import heapq
 import itertools
 from dataclasses import dataclass
-from typing import Generic, Iterable, Optional, TypeVar, overload
+from typing import Callable, Generic, Iterable, Optional, TypeVar, overload
 
 import pytest
 from hypothesis import given
@@ -153,6 +153,12 @@ class Delta:
     def invert(self) -> "Delta":
         return self * -1
 
+    def rotate_left(self) -> "Delta":
+        return Delta(x=-self.y, y=self.x, z=self.z)
+
+    def rotate_right(self) -> "Delta":
+        return Delta(x=self.y, y=-self.x, z=self.z)
+
     def manhattan_distance(self) -> int:
         return abs(self.x) + abs(self.y) + abs(self.z)
 
@@ -235,6 +241,20 @@ class DenseGrid(Generic[T]):
                 )
             )
         return cls([rows])
+
+    @classmethod
+    def from_str(cls, s: str) -> "DenseGrid[str]":
+        """Create a new grid from the given string, where each line is a row and
+        each character is a cell. The string is `strip`ped before creating the
+        grid.
+        """
+        return DenseGrid.from_2d([list(line) for line in s.strip().splitlines()])
+
+    @classmethod
+    def from_str_mapped(cls, s: str, f: Callable[[str], T]) -> "DenseGrid[T]":
+        return DenseGrid.from_2d(
+            [[f(c) for c in line] for line in s.strip().splitlines()]
+        )
 
     def __getitem__(self, coord: Coord) -> T:
         """Get the value at the given coordinate."""
@@ -606,31 +626,38 @@ class ShortestPath(Generic[T]):
     def __init__(self) -> None:
         self._best_lengths: dict[T, tuple[int, list[T]]] = {}
 
+    def is_end_node(self, node: T) -> bool:
+        """Returns whether the given node is an end node.
+
+        Should be overridden by the implementor.
+        """
+        raise NotImplementedError()
+
     def get_neighbors(self, node: T) -> list[tuple[T, int]]:
         """Returns a list of (neighbor, distance) pairs for the given node.
 
         Should be overridden by the implementor.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
-    def run(
-        self, start_nodes: list[T], end_nodes: list[T]
-    ) -> dict[T, tuple[int, list[T]]]:
+    def run(self, start_nodes: list[T]) -> dict[T, tuple[int, list[T]]]:
         """Find the shortest paths from any of the start nodes to any of the end
         nodes.
-
-        Returns a dictionary mapping each end node to a tuple of the length of
-        the shortest path and the path itself. If no path exists for a given end
-        node, there will be no entry in the dictionary for that node. If
-        multiple shortest paths exist, it is not specified which one will be
-        returned.
         """
         self._best_lengths = {node: (0, [node]) for node in start_nodes}
-        end_nodes2 = set(end_nodes)
-        queue = collections.deque[T](start_nodes)
+
+        @dataclass(frozen=True)
+        class HeapNode:
+            length: int
+            node: T
+
+            def __lt__(self, other: "HeapNode") -> bool:
+                return self.length < other.length
+
+        queue = [HeapNode(length=0, node=node) for node in start_nodes]
         while queue:
-            current_node = queue.popleft()
-            if current_node in end_nodes2:
+            current_node = heapq.heappop(queue).node
+            if self.is_end_node(current_node):
                 continue
             (current_length, current_path) = self._best_lengths[current_node]
             for neighbor, distance in self.get_neighbors(current_node):
@@ -648,13 +675,16 @@ class ShortestPath(Generic[T]):
                         new_length,
                         current_path + [neighbor],
                     )
-                    queue.append(neighbor)
+                    heapq.heappush(queue, HeapNode(length=new_length, node=neighbor))
 
-        return {k: v for (k, v) in self._best_lengths.items() if k in end_nodes2}
+        return {k: v for (k, v) in self._best_lengths.items() if self.is_end_node(k)}
 
 
 def test_shortest_path() -> None:
     class MyShortestPath(ShortestPath[int]):
+        def is_end_node(self, node: int) -> bool:
+            return node == 9
+
         def get_neighbors(self, node: int) -> list[tuple[int, int]]:
             if node >= 20:
                 return []
@@ -662,4 +692,4 @@ def test_shortest_path() -> None:
                 return [(node + 2, 2), (node + 3, 3)]
 
     shortest_path = MyShortestPath()
-    assert shortest_path.run([1], [9]) == {9: (8, [1, 3, 6, 9])}
+    assert shortest_path.run([1]) == {9: (8, [1, 3, 6, 9])}
