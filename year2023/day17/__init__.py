@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from functools import *
 from itertools import *
+from typing import Self
 
 from .. import utils as u
 
@@ -29,15 +30,14 @@ PART_2_ANSWER = 94
 
 
 def test_part1() -> None:
-    assert Solution().part1(Solution().parse_input(TEST_INPUT1)) == PART_1_ANSWER
+    assert Solution.parse_input(TEST_INPUT1).part1() == PART_1_ANSWER
 
 
 def test_part2() -> None:
-    assert Solution().part2(Solution().parse_input(TEST_INPUT2)) == PART_2_ANSWER
+    assert Solution.parse_input(TEST_INPUT2).part2() == PART_2_ANSWER
     assert (
-        Solution().part2(
-            Solution().parse_input(
-                r"""
+        Solution.parse_input(
+            r"""
 
 111111111111
 999999999991
@@ -45,8 +45,7 @@ def test_part2() -> None:
 999999999991
 999999999991
 """
-            )
-        )
+        ).part2()
         == 71
     )
 
@@ -58,17 +57,25 @@ class Node:
     num_moves_in_this_direction: int
 
 
-class Solution(u.Solution[Input]):
-    def parse_input(self, input: str) -> Input:
-        return u.DenseGrid.from_str_mapped(input, int)
+@dataclass
+class Solution(u.Solution):
+    grid: u.DenseGrid[int]
+    top_left_coord: u.Coord
+    bottom_right_coord: u.Coord
 
-    def part1(self, input: Input) -> int:
-        top_left = u.Coord.from_2d(0, 0)
-        bottom_right = u.Coord.from_2d(input.width - 1, input.height - 1)
+    @classmethod
+    def parse_input(cls, input: str) -> Self:
+        grid = u.DenseGrid.from_str_mapped(input, int)
+        top_left_coord = u.Coord.from_2d(0, 0)
+        bottom_right_coord = u.Coord.from_2d(grid.width - 1, grid.height - 1)
+        return cls(grid, top_left_coord, bottom_right_coord)
+
+    def part1(self) -> int:
+        outer = self
 
         class ShortestPath(u.ShortestPath[Node]):
             def is_end_node(self, node: Node) -> bool:
-                return node.coord == bottom_right
+                return node.coord == outer.bottom_right_coord
 
             def get_neighbors(self, node: Node) -> list[tuple[Node, int]]:
                 next_nodes = [
@@ -96,17 +103,19 @@ class Solution(u.Solution[Input]):
                 return [
                     (next_node, weight)
                     for next_node in next_nodes
-                    if (weight := input.get(next_node.coord)) is not None
+                    if (weight := outer.grid.get(next_node.coord)) is not None
                 ]
 
         shortest_path = ShortestPath()
         result = shortest_path.run(
             start_nodes=[
                 Node(
-                    coord=top_left, delta=u.Deltas2d.EAST, num_moves_in_this_direction=1
+                    coord=self.top_left_coord,
+                    delta=u.Deltas2d.EAST,
+                    num_moves_in_this_direction=1,
                 ),
                 Node(
-                    coord=top_left,
+                    coord=self.top_left_coord,
                     delta=u.Deltas2d.SOUTH,
                     num_moves_in_this_direction=1,
                 ),
@@ -114,16 +123,18 @@ class Solution(u.Solution[Input]):
         )
         return next(weight for (weight, _path) in result.values())
 
-    def part2(self, input: Input) -> int:
-        top_left = u.Coord.from_2d(0, 0)
-        bottom_right = u.Coord.from_2d(input.width - 1, input.height - 1)
+    def part2(self) -> int:
+        outer = self
 
         class ShortestPath(u.ShortestPath[Node]):
             def _can_turn_or_stop(self, node: Node) -> bool:
                 return node.num_moves_in_this_direction >= 4
 
             def is_end_node(self, node: Node) -> bool:
-                return node.coord == bottom_right and self._can_turn_or_stop(node)
+                return (
+                    node.coord == outer.bottom_right_coord
+                    and self._can_turn_or_stop(node)
+                )
 
             def get_neighbors(self, node: Node) -> list[tuple[Node, int]]:
                 next_nodes = []
@@ -155,17 +166,19 @@ class Solution(u.Solution[Input]):
                 return [
                     (next_node, weight)
                     for next_node in next_nodes
-                    if (weight := input.get(next_node.coord)) is not None
+                    if (weight := outer.grid.get(next_node.coord)) is not None
                 ]
 
         shortest_path = ShortestPath()
         result = shortest_path.run(
             start_nodes=[
                 Node(
-                    coord=top_left, delta=u.Deltas2d.EAST, num_moves_in_this_direction=1
+                    coord=outer.top_left_coord,
+                    delta=u.Deltas2d.EAST,
+                    num_moves_in_this_direction=1,
                 ),
                 Node(
-                    coord=top_left,
+                    coord=outer.top_left_coord,
                     delta=u.Deltas2d.SOUTH,
                     num_moves_in_this_direction=1,
                 ),

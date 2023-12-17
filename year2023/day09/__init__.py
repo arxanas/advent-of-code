@@ -1,10 +1,9 @@
+from dataclasses import dataclass
 from functools import *
 from itertools import *
-from typing import Sequence
+from typing import Self, Sequence
 
 from .. import utils as u
-
-Input = list[list[int]]
 
 TEST_INPUT1 = """
 0 3 6 9 12 15
@@ -19,11 +18,11 @@ PART_2_ANSWER = 2
 
 
 def test_part1() -> None:
-    assert Solution().part1(Solution().parse_input(TEST_INPUT1)) == PART_1_ANSWER
+    assert Solution.parse_input(TEST_INPUT1).part1() == PART_1_ANSWER
 
 
 def test_part2() -> None:
-    assert Solution().part2(Solution().parse_input(TEST_INPUT2)) == PART_2_ANSWER
+    assert Solution.parse_input(TEST_INPUT2).part2() == PART_2_ANSWER
 
 
 def interpolate(seq: Sequence[int]) -> int:
@@ -34,15 +33,19 @@ def interpolate(seq: Sequence[int]) -> int:
         return seq[-1] + interpolate(diffs)
 
 
-class Solution(u.Solution[Input]):
-    def parse_input(self, input: str) -> Input:
+@dataclass
+class Solution(u.Solution):
+    input: list[list[int]]
+
+    @classmethod
+    def parse_input(cls, input: str) -> Self:
         result = []
         for line in input.strip().splitlines():
             result.append(u.extract_int_list(line))
-        return result
+        return cls(input=result)
 
-    def part1(self, input: Input) -> int:
-        return sum(interpolate(seq) for seq in input)
+    def part1(self) -> int:
+        return sum(interpolate(seq) for seq in self.input)
 
-    def part2(self, input: Input) -> int:
-        return sum(interpolate(list(reversed(seq))) for seq in input)
+    def part2(self) -> int:
+        return sum(interpolate(list(reversed(seq))) for seq in self.input)

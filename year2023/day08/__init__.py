@@ -2,16 +2,9 @@ import re
 from dataclasses import dataclass
 from functools import *
 from itertools import *
-from typing import Literal
+from typing import Literal, Self
 
 from .. import utils as u
-
-
-@dataclass
-class Input:
-    dirs: list[Literal["L", "R"]]
-    edges: dict[str, tuple[str, str]]
-
 
 TEST_INPUT1 = """
 RL
@@ -43,29 +36,32 @@ PART_2_ANSWER = 6
 
 
 def test_part1() -> None:
-    assert Solution().part1(Solution().parse_input(TEST_INPUT1)) == PART_1_ANSWER
+    assert Solution.parse_input(TEST_INPUT1).part1() == PART_1_ANSWER
     assert (
-        Solution().part1(
-            Solution().parse_input(
-                """
+        Solution.parse_input(
+            """
 LLR
 
 AAA = (BBB, BBB)
 BBB = (AAA, ZZZ)
 ZZZ = (ZZZ, ZZZ)
 """
-            )
-        )
+        ).part1()
         == 6
     )
 
 
 def test_part2() -> None:
-    assert Solution().part2(Solution().parse_input(TEST_INPUT2)) == PART_2_ANSWER
+    assert Solution.parse_input(TEST_INPUT2).part2() == PART_2_ANSWER
 
 
-class Solution(u.Solution[Input]):
-    def parse_input(self, input: str) -> Input:
+@dataclass
+class Solution(u.Solution):
+    dirs: list[Literal["L", "R"]]
+    edges: dict[str, tuple[str, str]]
+
+    @classmethod
+    def parse_input(cls, input: str) -> Self:
         (header, edge_lines) = u.split_line_groups(input.strip())
         dirs = []
         for c in header:
@@ -83,17 +79,17 @@ class Solution(u.Solution[Input]):
                 raise ValueError(f"Invalid edge: {line}")
             edges[match.group(1)] = (match.group(2), match.group(3))
 
-        return Input(
+        return cls(
             dirs=dirs,
             edges=edges,
         )
 
-    def part1(self, input: Input) -> int:
+    def part1(self) -> int:
         current_node = "AAA"
         count = 0
-        for dir in cycle(input.dirs):
+        for dir in cycle(self.dirs):
             count += 1
-            (left, right) = input.edges[current_node]
+            (left, right) = self.edges[current_node]
             match dir:
                 case "L":
                     current_node = left
@@ -103,14 +99,14 @@ class Solution(u.Solution[Input]):
                 break
         return count
 
-    def part2(self, input: Input) -> int:
-        current_nodes = {node for node in input.edges.keys() if node.endswith("A")}
+    def part2(self) -> int:
+        current_nodes = {node for node in self.edges.keys() if node.endswith("A")}
         count = 0
-        for dir in cycle(input.dirs):
+        for dir in cycle(self.dirs):
             count += 1
             next_nodes = set()
             for node in current_nodes:
-                (left, right) = input.edges[node]
+                (left, right) = self.edges[node]
                 match dir:
                     case "L":
                         next_node = left
