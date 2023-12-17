@@ -1,10 +1,9 @@
+from dataclasses import dataclass
 from functools import *
 from itertools import *
+from typing import Self
 
 from .. import utils as u
-
-Card = tuple[frozenset[int], frozenset[int]]
-Input = list[Card]
 
 TEST_INPUT1 = """
 Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
@@ -22,15 +21,23 @@ PART_2_ANSWER = 30
 
 
 def test_part1() -> None:
-    assert Solution().part1(Solution().parse_input(TEST_INPUT1)) == PART_1_ANSWER
+    assert Solution.parse_input(TEST_INPUT1).part1() == PART_1_ANSWER
 
 
 def test_part2() -> None:
-    assert Solution().part2(Solution().parse_input(TEST_INPUT2)) == PART_2_ANSWER
+    assert Solution.parse_input(TEST_INPUT2).part2() == PART_2_ANSWER
 
 
-class Solution(u.Solution[Input]):
-    def parse_input(self, input: str) -> Input:
+Card = tuple[frozenset[int], frozenset[int]]
+Input = list[Card]
+
+
+@dataclass
+class Solution(u.Solution):
+    input: Input
+
+    @classmethod
+    def parse_input(cls, input: str) -> Self:
         def parse_num_list(s: str) -> frozenset[int]:
             return frozenset(int(x) for x in s.split())
 
@@ -40,22 +47,22 @@ class Solution(u.Solution[Input]):
             line = line.split(":")[1]
             (first, second) = line.split("|")
             result.append((parse_num_list(first), parse_num_list(second)))
-        return result
+        return cls(input=result)
 
-    def part1(self, input: Input) -> int:
+    def part1(self) -> int:
         result = 0
-        for first, second in input:
+        for first, second in self.input:
             common = first & second
             if common:
                 result += 2 ** (len(common) - 1)
         return result
 
-    def part2(self, input: Input) -> int:
+    def part2(self) -> int:
         @cache
         def process_card(index: int, card: Card) -> int:
             (first, second) = card
             common = first & second
             new_indexes = [index + i + 1 for i in range(len(common))]
-            return 1 + sum(process_card(i, input[i]) for i in new_indexes)
+            return 1 + sum(process_card(i, self.input[i]) for i in new_indexes)
 
-        return sum(process_card(i, card) for i, card in enumerate(input))
+        return sum(process_card(i, card) for i, card in enumerate(self.input))

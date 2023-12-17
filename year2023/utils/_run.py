@@ -4,43 +4,46 @@ import re
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, TypeVar
-
-TInput = TypeVar("TInput")
+from typing import Self
 
 _DAY_RE = re.compile(r"day(\d+)")
 _YEAR_RE = re.compile(r"year(\d+)")
 
 
-class Solution(Generic[TInput], ABC):
+class Solution(ABC):
+    @classmethod
     @abstractmethod
-    def parse_input(self, input: str) -> TInput:
+    def parse_input(cls, input: str) -> Self:
         raise NotImplementedError()
 
     @abstractmethod
-    def part1(self, input: TInput) -> object:
+    def part1(self) -> object:
         raise NotImplementedError()
 
     @abstractmethod
-    def part2(self, input: TInput) -> object:
+    def part2(self) -> object:
         raise NotImplementedError()
 
-    def _class_def_path(self) -> Path:
-        return Path(inspect.getfile(self.__class__))
+    @classmethod
+    def _class_def_path(cls) -> Path:
+        return Path(inspect.getfile(cls))
 
-    def year(self) -> int:
-        dir = self._class_def_path().parent.parent.name
+    @classmethod
+    def year(cls) -> int:
+        dir = cls._class_def_path().parent.parent.name
         match = _YEAR_RE.match(dir)
         assert match is not None, f"Could not extract year from directory {dir!r}"
         return int(match.group(1))
 
-    def day(self) -> int:
-        dir = self._class_def_path().parent.name
+    @classmethod
+    def day(cls) -> int:
+        dir = cls._class_def_path().parent.name
         match = _DAY_RE.match(dir)
         assert match is not None, f"Could not extract day from directory {dir!r}"
         return int(match.group(1))
 
-    def main(self) -> None:
+    @classmethod
+    def main(cls) -> None:
         # https://stackoverflow.com/a/44175370/344643
         logging.basicConfig(
             format="%(asctime)s %(levelname)-8s %(message)s",
@@ -48,7 +51,7 @@ class Solution(Generic[TInput], ABC):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-        input_path = self._class_def_path().parent / "input"
+        input_path = cls._class_def_path().parent / "input"
         if not input_path.exists():
             logging.info("Downloading input...")
             try:
@@ -58,9 +61,9 @@ class Solution(Generic[TInput], ABC):
                         "download",
                         "--input-only",
                         "--year",
-                        str(self.year()),
+                        str(cls.year()),
                         "--day",
-                        str(self.day()),
+                        str(cls.day()),
                         "--input-file",
                         str(input_path),
                     ]
@@ -70,7 +73,7 @@ class Solution(Generic[TInput], ABC):
                     "Could not download input. (Does the `aoc` binary exist? Install with `cargo install aoc-cli`.)"
                 ) from e
         input_str = input_path.read_text()
-        input = self.parse_input(input_str)
+        solution = cls.parse_input(input_str)
 
-        print("part 1:", self.part1(input))
-        print("part 2:", self.part2(input))
+        print("part 1:", solution.part1())
+        print("part 2:", solution.part2())

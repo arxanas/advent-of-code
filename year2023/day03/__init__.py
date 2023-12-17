@@ -1,5 +1,7 @@
 import re
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Self
 
 from year2023 import utils as u
 
@@ -8,18 +10,13 @@ PART_2_ANSWER = 467835
 
 
 def test_part1() -> None:
-    assert (
-        Solution().part1(Solution().parse_input(Solution.TEST_INPUT1)) == PART_1_ANSWER
-    )
+    assert Solution.parse_input(Solution.TEST_INPUT1).part1() == PART_1_ANSWER
 
 
 def test_part2() -> None:
-    assert (
-        Solution().part2(Solution().parse_input(Solution.TEST_INPUT2)) == PART_2_ANSWER
-    )
+    assert Solution.parse_input(Solution.TEST_INPUT2).part2() == PART_2_ANSWER
 
 
-Input = tuple[list[str], u.DenseGrid[str]]
 NUM_RE = re.compile(r"\d+")
 
 
@@ -27,7 +24,8 @@ def is_symbol(c: str) -> bool:
     return c != "." and not c.isdigit()
 
 
-class Solution(u.Solution[Input]):
+@dataclass
+class Solution(u.Solution):
     TEST_INPUT1 = """
 467..114..
 ...*......
@@ -43,12 +41,15 @@ class Solution(u.Solution[Input]):
 
     TEST_INPUT2 = TEST_INPUT1
 
-    def parse_input(self, input: str) -> Input:
-        lines = input.strip().splitlines()
-        return (lines, u.DenseGrid.from_2d([list(line) for line in lines]))
+    input: tuple[list[str], u.DenseGrid[str]]
 
-    def part1(self, input: Input) -> int:
-        (lines, grid) = input
+    @classmethod
+    def parse_input(cls, input: str) -> Self:
+        lines = input.strip().splitlines()
+        return cls(input=(lines, u.DenseGrid.from_2d([list(line) for line in lines])))
+
+    def part1(self) -> int:
+        (lines, grid) = self.input
         result = 0
         for y, line in enumerate(lines):
             for num in NUM_RE.finditer(line):
@@ -65,10 +66,10 @@ class Solution(u.Solution[Input]):
                     result += int(num.group())
         return result
 
-    def part2(self, input: Input) -> int:
+    def part2(self) -> int:
         num_re = re.compile(r"\d+")
 
-        (lines, grid) = input
+        (lines, grid) = self.input
         gear_nums = defaultdict[u.Coord, list[int]](list)
         for y, line in enumerate(lines):
             for num in num_re.finditer(line):

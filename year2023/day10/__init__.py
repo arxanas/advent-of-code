@@ -1,12 +1,12 @@
 from collections import deque
+from dataclasses import dataclass
 from functools import *
 from itertools import *
+from typing import Self
 
 import pytest
 
 from .. import utils as u
-
-Input = u.DenseGrid[str]
 
 TEST_INPUT11 = """
 .....
@@ -61,23 +61,27 @@ L7JLJL-JLJLJL--JLJ.L
 
 
 def test_part1() -> None:
-    assert Solution().part1(Solution().parse_input(TEST_INPUT11)) == 4
-    assert Solution().part1(Solution().parse_input(TEST_INPUT12)) == 8
+    assert Solution.parse_input(TEST_INPUT11).part1() == 4
+    assert Solution.parse_input(TEST_INPUT12).part1() == 8
 
 
 @pytest.mark.xfail
 def test_part2() -> None:
-    assert Solution().part2(Solution().parse_input(TEST_INPUT21)) == 4
-    assert Solution().part2(Solution().parse_input(TEST_INPUT22)) == 8
-    assert Solution().part2(Solution().parse_input(TEST_INPUT23)) == 10
+    assert Solution.parse_input(TEST_INPUT21).part2() == 4
+    assert Solution.parse_input(TEST_INPUT22).part2() == 8
+    assert Solution.parse_input(TEST_INPUT23).part2() == 10
 
 
-class Solution(u.Solution[Input]):
-    def parse_input(self, input: str) -> Input:
+@dataclass
+class Solution(u.Solution):
+    grid: u.DenseGrid[str]
+
+    @classmethod
+    def parse_input(cls, input: str) -> Self:
         chars = [list(line) for line in input.strip().splitlines()]
-        return u.DenseGrid.from_2d(chars)
+        return cls(u.DenseGrid.from_2d(chars))
 
-    def part1(self, input: Input) -> int:
+    def part1(self) -> int:
         def direction(c: str) -> list[u.Delta]:
             match c:
                 case "|":
@@ -96,13 +100,13 @@ class Solution(u.Solution[Input]):
                     deltas = []
             return deltas
 
-        start_coord = next(coord for coord, c in input.iter_cells() if c == "S")
+        start_coord = next(coord for coord, c in self.grid.iter_cells() if c == "S")
         start_deltas = []
         for (
             start_neighbor,
             start_neighbor_cell,
             start_neighbor_delta,
-        ) in input.iter_deltas(start_coord, u.Deltas2d.CARDINAL, max_steps=1):
+        ) in self.grid.iter_deltas(start_coord, u.Deltas2d.CARDINAL, max_steps=1):
             if start_neighbor_delta.invert() in direction(start_neighbor_cell):
                 start_deltas.append(start_neighbor_delta)
         assert len(start_deltas) == 2
@@ -113,12 +117,12 @@ class Solution(u.Solution[Input]):
         next_coords = deque([(start_coord, 0)])
         while next_coords:
             coord, distance = next_coords.popleft()
-            if coord not in input:
+            if coord not in self.grid:
                 continue
             if coord in best_paths and best_paths[coord] <= distance:
                 continue
             best_paths[coord] = distance
-            match input[coord]:
+            match self.grid[coord]:
                 case "S":
                     deltas = start_deltas
                 case "|":
@@ -138,6 +142,6 @@ class Solution(u.Solution[Input]):
             next_coords.extend((coord + delta, distance + 1) for delta in deltas)
         return max(best_paths.values())
 
-    def part2(self, input: Input) -> int:
+    def part2(self) -> int:
         result = 0
         return result
