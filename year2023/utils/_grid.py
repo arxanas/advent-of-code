@@ -1,7 +1,18 @@
 import heapq
 import itertools
+from abc import abstractmethod
+from collections import deque
 from dataclasses import dataclass
-from typing import Callable, Generic, Iterable, Optional, TypeVar, overload
+from typing import (
+    AbstractSet,
+    Callable,
+    Generator,
+    Generic,
+    Iterable,
+    Optional,
+    TypeVar,
+    overload,
+)
 
 import pytest
 from hypothesis import given
@@ -173,11 +184,19 @@ class Deltas2d:
     EAST = Delta(x=1, y=0, z=0)
     SOUTH = Delta(x=0, y=1, z=0)
     WEST = Delta(x=-1, y=0, z=0)
+    UP = NORTH
+    RIGHT = EAST
+    DOWN = SOUTH
+    LEFT = WEST
 
     NORTHEAST = Delta(x=1, y=-1, z=0)
     SOUTHEAST = Delta(x=1, y=1, z=0)
     SOUTHWEST = Delta(x=-1, y=1, z=0)
     NORTHWEST = Delta(x=-1, y=-1, z=0)
+    UP_RIGHT = NORTHEAST
+    DOWN_RIGHT = SOUTHEAST
+    DOWN_LEFT = SOUTHWEST
+    UP_LEFT = NORTHWEST
 
     CARDINAL: list[Delta] = [NORTH, EAST, SOUTH, WEST]
     """The four cardinal directions in 2D, represented as a list of deltas.
@@ -626,6 +645,7 @@ class ShortestPath(Generic[T]):
     def __init__(self) -> None:
         self._best_lengths: dict[T, tuple[int, list[T]]] = {}
 
+    @abstractmethod
     def is_end_node(self, node: T) -> bool:
         """Returns whether the given node is an end node.
 
@@ -633,6 +653,7 @@ class ShortestPath(Generic[T]):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def get_neighbors(self, node: T) -> list[tuple[T, int]]:
         """Returns a list of (neighbor, distance) pairs for the given node.
 
@@ -693,3 +714,56 @@ def test_shortest_path() -> None:
 
     shortest_path = MyShortestPath()
     assert shortest_path.run([1]) == {9: (8, [1, 3, 6, 9])}
+
+
+@dataclass(frozen=True)
+class FloodFillState(Generic[T]):
+    next: deque[T]
+    seen: AbstractSet[T]
+
+
+class FloodFill(Generic[T]):
+    @abstractmethod
+    def get_neighbors(self, node: T) -> list[T]:
+        raise NotImplementedError()
+
+    def run(self, start_nodes: list[T]) -> Generator[FloodFillState[T], None, set[T]]:
+        next = deque(start_nodes)
+        seen = set()
+        while next:
+            node = next.popleft()
+            if node in seen:
+                continue
+            seen.add(node)
+            yield FloodFillState(next=next, seen=seen)
+            for neighbor in self.get_neighbors(node):
+                next.append(neighbor)
+        return seen
+
+
+def first_completed_generator(generators: list[Generator[T, None, U]]) -> U:
+    """Run the given generators in parallel, returning the first one that
+    completes.
+
+    If multiple generators complete at the same time, the first one in the list
+    is returned.
+    """
+    while True:
+        for generator in generators:
+            try:
+                next(generator)
+            except StopIteration as e:
+                return e.value
+
+
+def test_first_completed_generator() -> None:
+    def generator1() -> Generator[int, None, str]:
+        yield 1
+        yield 2
+        return "generator1"
+
+    def generator2() -> Generator[int, None, str]:
+        yield 3
+        return "generator2"
+
+    assert first_completed_generator([generator1(), generator2()]) == "generator2"

@@ -19,8 +19,23 @@ from ._funs import (
     transpose_lines,
     unique_ordered,
 )
-from ._grid import Coord, Delta, Deltas2d, Deltas3d, DenseGrid, ShortestPath, SparseGrid
-from ._parse import extract_int_list, extract_int_list_pairs, split_line_groups
+from ._grid import (
+    Coord,
+    Delta,
+    Deltas2d,
+    Deltas3d,
+    DenseGrid,
+    FloodFill,
+    ShortestPath,
+    SparseGrid,
+    first_completed_generator,
+)
+from ._parse import (
+    extract_int_list,
+    extract_int_list_pairs,
+    hex_to_dec,
+    split_line_groups,
+)
 from ._run import Solution
 
 __all__ = [
@@ -37,7 +52,10 @@ __all__ = [
     "extract_int_list_pairs",
     "extract_int_list",
     "flatten",
+    "FloodFill",
+    "first_completed_generator",
     "floyd_warshall",
+    "hex_to_dec",
     "InclusiveInterval",
     "maybe_strip_prefix",
     "minmax",
