@@ -46,3 +46,8 @@ def test_extract_int_list_pairs() -> None:
     assert extract_int_list_pairs("1 2") == [(1, 2)]
     assert extract_int_list_pairs("1 2 3 4") == [(1, 2), (3, 4)]
     assert extract_int_list_pairs("ranges: 1-2 3-4") == [(1, 2), (3, 4)]
+
+
+def hex_to_dec(hex: str) -> int:
+    """Convert a hexadecimal string to an integer."""
+    return int(hex, 16)
