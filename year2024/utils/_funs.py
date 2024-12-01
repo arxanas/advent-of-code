@@ -214,9 +214,18 @@ def all_same(elements: Iterable[object]) -> bool:
     return True
 
 
-def test_all_same() -> None:
-    assert all_same([1, 1, 1])
-    assert not all_same([1, 2, 1])
+def transpose(matrix: Iterable[Iterable[T]]) -> list[list[T]]:
+    """Transpose a matrix. If the dimensions are not equal, the result will have
+    `None` values in the missing positions.
+
+    >>> transpose([[1, 2, 3], [4, 5, 6]])
+    [[1, 4], [2, 5], [3, 6]]
+    >>> transpose([[1, 2], [3, 4], [5, 6]])
+    [[1, 3, 5], [2, 4, 6]]
+    >>> transpose([[1, 2], [3, 4], [5]])
+    [[1, 3, 5], [2, 4, None]]
+    """
+    return [list(row) for row in itertools.zip_longest(*matrix)]
 
 
 def transpose_lines(lines: Sequence[str]) -> list[str]:
