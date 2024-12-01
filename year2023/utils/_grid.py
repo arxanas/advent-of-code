@@ -291,12 +291,10 @@ class DenseGrid(Generic[T]):
         return 0 <= x < self.width and 0 <= y < self.height and 0 <= z < self.depth
 
     @overload
-    def get(self, coord: Coord, default: U) -> T | U:
-        ...
+    def get(self, coord: Coord, default: U) -> T | U: ...
 
     @overload
-    def get(self, coord: Coord) -> T | None:
-        ...
+    def get(self, coord: Coord) -> T | None: ...
 
     def get(self, coord: Coord, default: object = None) -> object:
         """Get the value at the given coordinate, or `None` if the coordinate is
@@ -611,12 +609,10 @@ class SparseGrid(Generic[T]):
         return SparseGrid(cells=self._cells.copy())
 
     @overload
-    def get(self, coord: Coord, default: U) -> T | U:
-        ...
+    def get(self, coord: Coord, default: U) -> T | U: ...
 
     @overload
-    def get(self, coord: Coord) -> T | None:
-        ...
+    def get(self, coord: Coord) -> T | None: ...
 
     def get(self, coord: Coord, default: object = None) -> object:
         """Get the value at the given coordinate, or `None` if the coordinate is
