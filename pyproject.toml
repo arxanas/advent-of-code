@@ -32,6 +32,9 @@ ci = { composite = [
 python_files = "*.py"
 filterwarnings = "ignore:pkg_resources is deprecated as an API."
 
+[tool.ruff]
+extend-exclude = ["template"]
+
 [tool.ruff.lint]
 select = [
     # Pyflakes
