@@ -16,6 +16,7 @@ from ._funs import (
     split_into_groups_of_size_n,
     split_into_n_groups_exn,
     take_while,
+    transpose,
     transpose_lines,
     unique_ordered,
 )
@@ -70,6 +71,7 @@ __all__ = [
     "split_into_n_groups_exn",
     "split_line_groups",
     "take_while",
+    "transpose",
     "transpose_lines",
     "unique_ordered",
 ]
