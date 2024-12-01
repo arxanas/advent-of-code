@@ -3,13 +3,26 @@ import re
 
 
 def split_line_groups(input: str) -> list[str]:
-    """Split the input into groups of lines separated by blank lines."""
+    """Split the input into groups of lines separated by blank lines.
+
+    >>> split_line_groups("foo\\n\\nbar\\n\\nbaz")
+    ['foo', 'bar', 'baz']
+    """
     return input.strip().split("\n\n")
 
 
 def extract_int_list(input: str) -> list[int]:
     """Extract a list of integers from a string. Non-integral characters are
     used to distinguish between integer boundaries and are otherwise ignored.
+
+    >>> extract_int_list("1 2 3")
+    [1, 2, 3]
+    >>> extract_int_list("1-2 3")
+    [1, 2, 3]
+    >>> extract_int_list("1 -2 3")
+    [1, -2, 3]
+    >>> extract_int_list("foo: 1-2 bar: 3-4")
+    [1, 2, 3, 4]
     """
     int_re = re.compile(
         r"""
@@ -23,31 +36,32 @@ def extract_int_list(input: str) -> list[int]:
     return [int(x.group(0)) for x in int_re.finditer(input)]
 
 
-def test_extract_int_list() -> None:
-    assert extract_int_list("1 2 3") == [1, 2, 3]
-    assert extract_int_list("1-2 3") == [1, 2, 3]
-    assert extract_int_list("1 -2 3") == [1, -2, 3]
-    assert extract_int_list("foo: 1-2 bar: 3-4") == [1, 2, 3, 4]
-
-
 def extract_int_list_pairs(input: str) -> list[tuple[int, int]]:
-    """Call `extract_list` and group adjacent pairs of integers into tuples."""
+    """Call `extract_list` and group adjacent pairs of integers into tuples.
+
+    >>> extract_int_list_pairs("1 2")
+    [(1, 2)]
+    >>> extract_int_list_pairs("1 2 3")
+    [(1, 2)]
+    >>> extract_int_list_pairs("1 2 3 4")
+    [(1, 2), (3, 4)]
+    >>> extract_int_list_pairs("ranges: 1-2 3-4")
+    [(1, 2), (3, 4)]
+    """
     ints = extract_int_list(input)
     if len(ints) % 2 != 0:
-        logging.warn(
+        logging.warning(
             "Input list to %s has odd length (%d), ignoring last element",
             extract_int_list_pairs.__name__,
-            input,
+            len(ints),
         )
     return list(zip(ints[::2], ints[1::2]))
 
 
-def test_extract_int_list_pairs() -> None:
-    assert extract_int_list_pairs("1 2") == [(1, 2)]
-    assert extract_int_list_pairs("1 2 3 4") == [(1, 2), (3, 4)]
-    assert extract_int_list_pairs("ranges: 1-2 3-4") == [(1, 2), (3, 4)]
-
-
 def hex_to_dec(hex: str) -> int:
-    """Convert a hexadecimal string to an integer."""
+    """Convert a hexadecimal string to an integer.
+
+    >>> hex_to_dec("ff")
+    255
+    """
     return int(hex, 16)
