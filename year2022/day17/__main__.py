@@ -155,7 +155,8 @@ def solve(input: Input, max_num_rocks: int) -> int:
             #         floor_y = y - 1
             #         break
             # state = (direction, current_shape_idx, frozenset(grid))
-            # state = frozenset(grid)
+            # normalized_grid = {coord + u.Delta.from_2d(0, -floor_y) for coord in grid}
+            # state = frozenset(normalized_grid)
             # if state in seen_states:
             #     print("Saw state again!", state)
             # seen_states.add(state)
