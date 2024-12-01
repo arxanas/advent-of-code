@@ -29,6 +29,7 @@ ci = { composite = [
 ] }
 
 [tool.pytest.ini_options]
+addopts = "--doctest-modules"
 python_files = "*.py"
 filterwarnings = "ignore:pkg_resources is deprecated as an API."
 
