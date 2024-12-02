@@ -50,6 +50,26 @@ def split_into_n_groups_exn(input: Sequence[T], n: int) -> list[Sequence[T]]:
     return [input[i : i + group_size] for i in range(0, len(input), group_size)]
 
 
+def sliding_windows(iterable: Iterable[T], size: int) -> Iterable[Sequence[T]]:
+    """Return a sliding window of the given size over the given iterable.
+
+    >>> list(sliding_windows([1, 2, 3, 4, 5], 3))
+    [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
+    >>> list(sliding_windows([1, 2, 3, 4, 5], 1))
+    [[1], [2], [3], [4], [5]]
+    >>> list(sliding_windows([1, 2, 3, 4, 5], 6))
+    []
+    >>> import pytest
+    >>> with pytest.raises(ValueError):
+    ...     list(sliding_windows([1, 2, 3, 4, 5], 0))
+    """
+    if size <= 0:
+        raise ValueError(f"Size must be positive, but got {size=}")
+    elements = list(iterable)
+    for i in range(len(elements) - size + 1):
+        yield elements[i : i + size]
+
+
 def only(seq: Iterable[T]) -> Optional[T]:
     """Return the only element of the iterable, or return None if the iterable
         is empty or has more than one element.
