@@ -2,6 +2,15 @@ import logging
 import re
 
 
+def split_lines(input: str) -> list[str]:
+    r"""Strip whitespace and split the input into lines.
+
+    >>> split_lines("\n\nfoo\nbar\nbaz\n\n")
+    ['foo', 'bar', 'baz']
+    """
+    return input.strip().splitlines()
+
+
 def split_line_groups(input: str) -> list[str]:
     """Split the input into groups of lines separated by blank lines.
 

@@ -13,6 +13,7 @@ from ._funs import (
     only_exn,
     product_float,
     product_int,
+    sliding_windows,
     split_into_groups_of_size_n,
     split_into_n_groups_exn,
     take_while,
@@ -36,6 +37,7 @@ from ._parse import (
     extract_int_list_pairs,
     hex_to_dec,
     split_line_groups,
+    split_lines,
 )
 from ._run import Solution
 
@@ -65,10 +67,12 @@ __all__ = [
     "product_float",
     "product_int",
     "ShortestPath",
+    "sliding_windows",
     "Solution",
     "SparseGrid",
     "split_into_groups_of_size_n",
     "split_into_n_groups_exn",
+    "split_lines",
     "split_line_groups",
     "take_while",
     "transpose",
