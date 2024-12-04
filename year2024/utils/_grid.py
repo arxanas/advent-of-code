@@ -2,19 +2,16 @@ import heapq
 import itertools
 from abc import abstractmethod
 from collections import deque
+from collections.abc import Callable, Generator, Iterable, Sequence
 from dataclasses import dataclass
 from typing import (
     AbstractSet,
-    Callable,
-    Generator,
     Generic,
-    Iterable,
     Optional,
     TypeVar,
     overload,
 )
 
-import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -180,6 +177,8 @@ class Delta:
 class Deltas2d:
     """Constants for common deltas."""
 
+    ZERO = Delta.zero()
+
     NORTH = Delta(x=0, y=-1, z=0)
     EAST = Delta(x=1, y=0, z=0)
     SOUTH = Delta(x=0, y=1, z=0)
@@ -218,6 +217,8 @@ class Deltas2d:
 
 
 class Deltas3d:
+    ZERO = Delta.zero()
+
     CARDINAL = Deltas2d.CARDINAL + [Delta(x=0, y=0, z=1), Delta(x=0, y=0, z=-1)]
     """The six cardinal directions in 3D, represented as a list of deltas.
 
@@ -236,14 +237,35 @@ def test_delta(x: int, y: int, dx: int, dy: int) -> None:
 
 
 class DenseGrid(Generic[T]):
-    """A 3D grid of values, stored in a list of lists.
+    """A 3D grid of values, stored in nested lists. This can also be used as a
+    2D grid by ignoring the z-coordinates.
 
-    This uses O(n^3) memory, where n is the dimensions of the grid, i.e. it is
-    dense.
+    This uses `O(x * y * z)` memory, where `x`, `y`, `z` are the dimensions of the
+    grid, i.e. it is dense.
     """
 
     def __init__(self, cells: list[list[list[T]]]) -> None:
         self._cells = cells
+
+    def dump(self) -> str:
+        r"""Dump the grid to a string, with the top layer first.
+
+        >>> grid = DenseGrid([[["a", "b"], ["c", "d"]], [["e", "f"], ["g", "h"]]])
+        >>> print(grid.dump())
+        ab
+        cd
+        ---
+        ef
+        gh
+
+        """
+        layers: list[str] = []
+        for layer in self._cells:
+            layer_str: list[str] = []
+            for row in layer:
+                layer_str.append("".join(str(cell) for cell in row) + "\n")
+            layers.append("".join(layer_str))
+        return "---\n".join(layers).strip()
 
     @classmethod
     def from_2d(cls, rows: list[list[T]]) -> "DenseGrid[T]":
@@ -252,6 +274,27 @@ class DenseGrid(Generic[T]):
         The first row is the top row, and the first element of each row is the
         leftmost element. Note that the rows are naturally indexed via (row,
         column), but the grid is indexed via (column, row), i.e. (x, y).
+
+        >>> grid = DenseGrid.from_2d([["a", "b"], ["c", "d"]])
+        >>> C = Coord.from_2d
+        >>> grid[C(0, 0)]
+        'a'
+        >>> grid[C(1, 0)]
+        'b'
+        >>> grid[C(0, 1)]
+        'c'
+        >>> grid[C(1, 1)]
+        'd'
+        >>> grid.width
+        2
+        >>> grid.height
+        2
+
+        The rows must all be the same length:
+
+        >>> import pytest
+        >>> with pytest.raises(ValueError, match="All rows must be the same length"):
+        ...     DenseGrid.from_2d([["a", "b"], ["c"]])
         """
         if not all_same(len(row) for row in rows):
             raise ValueError(
@@ -263,9 +306,13 @@ class DenseGrid(Generic[T]):
 
     @classmethod
     def from_str(cls, s: str) -> "DenseGrid[str]":
-        """Create a new grid from the given string, where each line is a row and
+        r"""Create a new grid from the given string, where each line is a row and
         each character is a cell. The string is `strip`ped before creating the
         grid.
+
+        >>> print(DenseGrid.from_str("ab\ncd").dump())
+        ab
+        cd
         """
         return DenseGrid.from_2d([list(line) for line in s.strip().splitlines()])
 
@@ -331,75 +378,164 @@ class DenseGrid(Generic[T]):
         return self.depth == 1
 
     def iter_left_edge(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over the left edge of the grid, from top to bottom."""
+        r"""Iterate over the left edge of the grid, from top to bottom.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.iter_left_edge())
+        [(Coord(x=0, y=0, z=0), 'a'), (Coord(x=0, y=1, z=0), 'd'), (Coord(x=0, y=2, z=0), 'g')]
+        """
         assert self.is_2d()
         for y in range(self.height):
             coord = Coord(0, y, 0)
             yield (coord, self[coord])
 
     def iter_right_edge(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over the right edge of the grid, from top to bottom."""
+        r"""Iterate over the right edge of the grid, from top to bottom.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.iter_right_edge())
+        [(Coord(x=2, y=0, z=0), 'c'), (Coord(x=2, y=1, z=0), 'f'), (Coord(x=2, y=2, z=0), 'i')]
+        """
         assert self.is_2d()
         for y in range(self.height):
             coord = Coord(self.width - 1, y, 0)
             yield (coord, self[coord])
 
     def iter_vertical_edges(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over the left and right edges of the grid, from top to
+        r"""Iterate over the left and right edges of the grid, from top to
         bottom.
 
         Note that duplicate coordinates are not yielded (in the situation where
         the grid is only one column wide).
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> pprint.pprint(
+        ... list(grid.iter_vertical_edges())
+        ... )
+        [(Coord(x=0, y=0, z=0), 'a'),
+         (Coord(x=0, y=1, z=0), 'd'),
+         (Coord(x=0, y=2, z=0), 'g'),
+         (Coord(x=2, y=0, z=0), 'c'),
+         (Coord(x=2, y=1, z=0), 'f'),
+         (Coord(x=2, y=2, z=0), 'i')]
         """
         return unique_ordered(
             itertools.chain(self.iter_left_edge(), self.iter_right_edge())
         )
 
     def iter_top_edge(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over the top edge of the grid, from left to right."""
+        r"""Iterate over the top edge of the grid, from left to right.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.iter_top_edge())
+        [(Coord(x=0, y=0, z=0), 'a'), (Coord(x=1, y=0, z=0), 'b'), (Coord(x=2, y=0, z=0), 'c')]
+        """
         assert self.is_2d()
         for x in range(self.width):
             coord = Coord(x, 0, 0)
             yield (coord, self[coord])
 
     def iter_bottom_edge(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over the bottom edge of the grid, from left to right."""
+        r"""Iterate over the bottom edge of the grid, from left to right.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.iter_bottom_edge())
+        [(Coord(x=0, y=2, z=0), 'g'), (Coord(x=1, y=2, z=0), 'h'), (Coord(x=2, y=2, z=0), 'i')]
+        """
         assert self.is_2d()
         for x in range(self.width):
             coord = Coord(x, self.height - 1, 0)
             yield (coord, self[coord])
 
     def iter_horizontal_edges(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over the top and bottom edges of the grid, from left to
+        r"""Iterate over the top and bottom edges of the grid, from left to
         right.
 
         Note that duplicate coordinates are not yielded (in the situation where
         the grid is only one row tall).
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> pprint.pprint(
+        ... list(grid.iter_horizontal_edges())
+        ... )
+        [(Coord(x=0, y=0, z=0), 'a'),
+         (Coord(x=1, y=0, z=0), 'b'),
+         (Coord(x=2, y=0, z=0), 'c'),
+         (Coord(x=0, y=2, z=0), 'g'),
+         (Coord(x=1, y=2, z=0), 'h'),
+         (Coord(x=2, y=2, z=0), 'i')]
         """
         return unique_ordered(
             itertools.chain(self.iter_top_edge(), self.iter_bottom_edge())
         )
 
     def iter_edges(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over all edges of the grid, from left to right, then top to
+        r"""Iterate over all edges of the grid, from left to right, then top to
         bottom.
 
         Note that duplicate coordinates are not yielded.
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> pprint.pprint(
+        ... list(grid.iter_edges())
+        ... )
+        [(Coord(x=0, y=0, z=0), 'a'),
+         (Coord(x=1, y=0, z=0), 'b'),
+         (Coord(x=2, y=0, z=0), 'c'),
+         (Coord(x=0, y=2, z=0), 'g'),
+         (Coord(x=1, y=2, z=0), 'h'),
+         (Coord(x=2, y=2, z=0), 'i'),
+         (Coord(x=0, y=1, z=0), 'd'),
+         (Coord(x=2, y=1, z=0), 'f')]
         """
         return unique_ordered(
             itertools.chain(self.iter_horizontal_edges(), self.iter_vertical_edges())
         )
 
     def iter_coords(self) -> Iterable[Coord]:
-        """Iterate over all coordinates in the grid, in some order."""
+        r"""Iterate over all coordinates in the grid, in some order.
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> pprint.pprint(
+        ... list(grid.iter_coords())
+        ... )
+        [Coord(x=0, y=0, z=0),
+         Coord(x=1, y=0, z=0),
+         Coord(x=2, y=0, z=0),
+         Coord(x=0, y=1, z=0),
+         Coord(x=1, y=1, z=0),
+         Coord(x=2, y=1, z=0),
+         Coord(x=0, y=2, z=0),
+         Coord(x=1, y=2, z=0),
+         Coord(x=2, y=2, z=0)]
+        """
         for z in range(self.depth):
             for y in range(self.height):
                 for x in range(self.width):
                     yield Coord(x, y, z)
 
     def iter_cells(self) -> Iterable[tuple[Coord, T]]:
-        """Iterate over all coordinates and values in the grid, in some
+        r"""Iterate over all coordinates and values in the grid, in some
         order.
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> pprint.pprint(
+        ... list(grid.iter_cells())
+        ... )
+        [(Coord(x=0, y=0, z=0), 'a'),
+         (Coord(x=1, y=0, z=0), 'b'),
+         (Coord(x=2, y=0, z=0), 'c'),
+         (Coord(x=0, y=1, z=0), 'd'),
+         (Coord(x=1, y=1, z=0), 'e'),
+         (Coord(x=2, y=1, z=0), 'f'),
+         (Coord(x=0, y=2, z=0), 'g'),
+         (Coord(x=1, y=2, z=0), 'h'),
+         (Coord(x=2, y=2, z=0), 'i')]
         """
         for coord in self.iter_coords():
             yield (coord, self[coord])
@@ -412,13 +548,23 @@ class DenseGrid(Generic[T]):
         include_start: bool = True,
         max_steps: Optional[int] = None,
     ) -> Iterable[tuple[Coord, T]]:
-        """Iterate over all coordinates and values in the grid, starting at
-        the given coordinate and moving in the given direction.
+        r"""Start from a coordinate in the grid, then repeatedly apply the
+        provided delta to yield a series of cells until reaching the end of the
+        grid or `max_steps` iterations.
 
         If `include_start` is False, the start coordinate is not yielded.
         If `max_steps` is not None, at most `max_steps` coordinates are yielded.
         (Note that this interacts with `include_start` to include or exclude the
         start coordinate.)
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> pprint.pprint(
+        ... list(grid.iter_delta(start=Coord.from_2d(0, 0), delta=Delta.from_2d(1, 0)))
+        ... )
+        [(Coord(x=0, y=0, z=0), 'a'),
+         (Coord(x=1, y=0, z=0), 'b'),
+         (Coord(x=2, y=0, z=0), 'c')]
         """
         (x, y, z) = start.to_tuple()
         (dx, dy, dz) = delta.to_tuple()
@@ -441,107 +587,44 @@ class DenseGrid(Generic[T]):
         start: Coord,
         deltas: Iterable[Delta],
         *,
+        include_start: bool = True,
         max_steps: Optional[int] = None,
-    ) -> Iterable[tuple[Coord, T, Delta]]:
-        """Iterate over all coordinates and values in the grid, starting at
+    ) -> Iterable[Sequence[tuple[Coord, T, Delta]]]:
+        r"""Iterate over all coordinates and values in the grid, starting at
         the given coordinate and moving in the given directions.
 
-        See `iter_delta` for the meanings of the keyword parameters. The value
-        of `include_start` is always set to `False`, since it would otherwise be
-        included in multiple results.
+        If `include_start` is False, the start coordinate is not yielded.
+        If `max_steps` is not None, at most `max_steps` coordinates are yielded.
+        (Note that this interacts with `include_start` to include or exclude the
+        start coordinate.)
+
+        >>> import pprint
+        >>> grid = DenseGrid.from_str("abcd\nefgh\nijkl")
+
+        >>> pprint.pprint(
+        ... list(grid.iter_deltas(Deltas2d.ZERO, [Deltas2d.RIGHT, Deltas2d.DOWN], max_steps=1))
+        ... )
+        [[(Coord(x=0, y=0, z=0), 'a', Delta(x=1, y=0, z=0))],
+         [(Coord(x=0, y=0, z=0), 'a', Delta(x=0, y=1, z=0))]]
+
+        >>> pprint.pprint(
+        ... list(grid.iter_deltas(Deltas2d.ZERO, [Deltas2d.RIGHT, Deltas2d.DOWN], max_steps=2))
+        ... )
+        [[(Coord(x=0, y=0, z=0), 'a', Delta(x=1, y=0, z=0)),
+          (Coord(x=1, y=0, z=0), 'b', Delta(x=1, y=0, z=0))],
+         [(Coord(x=0, y=0, z=0), 'a', Delta(x=0, y=1, z=0)),
+          (Coord(x=0, y=1, z=0), 'e', Delta(x=0, y=1, z=0))]]
         """
         for delta in deltas:
-            for coord, value in self.iter_delta(
-                start=start,
-                delta=delta,
-                include_start=False,
-                max_steps=max_steps,
-            ):
-                yield (coord, value, delta)
-
-
-def test_dense_grid() -> None:
-    C = Coord.from_2d
-    D = Delta.from_2d
-
-    with pytest.raises(ValueError, match="All rows must be the same length"):
-        DenseGrid.from_2d([["a", "b"], ["c"]])
-
-    grid = DenseGrid.from_2d([["a", "b"], ["c", "d"]])
-    assert grid[C(0, 0)] == "a"
-    assert grid[C(1, 0)] == "b"
-    assert grid[C(0, 1)] == "c"
-    assert grid[C(1, 1)] == "d"
-    assert grid.width == 2
-    assert grid.height == 2
-
-    assert list(grid.iter_left_edge()) == [(C(0, 0), "a"), (C(0, 1), "c")]
-    assert list(grid.iter_right_edge()) == [(C(1, 0), "b"), (C(1, 1), "d")]
-    assert list(grid.iter_vertical_edges()) == [
-        (C(0, 0), "a"),
-        (C(0, 1), "c"),
-        (C(1, 0), "b"),
-        (C(1, 1), "d"),
-    ]
-    assert list(grid.iter_top_edge()) == [(C(0, 0), "a"), (C(1, 0), "b")]
-    assert list(grid.iter_bottom_edge()) == [(C(0, 1), "c"), (C(1, 1), "d")]
-    assert list(grid.iter_horizontal_edges()) == [
-        (C(0, 0), "a"),
-        (C(1, 0), "b"),
-        (C(0, 1), "c"),
-        (C(1, 1), "d"),
-    ]
-    assert list(grid.iter_edges()) == [
-        (C(0, 0), "a"),
-        (C(1, 0), "b"),
-        (C(0, 1), "c"),
-        (C(1, 1), "d"),
-    ]
-
-    assert list(grid.iter_coords()) == [C(0, 0), C(1, 0), C(0, 1), C(1, 1)]
-    assert list(grid.iter_cells()) == [
-        (C(0, 0), "a"),
-        (C(1, 0), "b"),
-        (C(0, 1), "c"),
-        (C(1, 1), "d"),
-    ]
-    assert list(grid.iter_delta(C(0, 0), D(1, 0))) == [
-        (C(0, 0), "a"),
-        (C(1, 0), "b"),
-    ]
-    assert list(grid.iter_delta(C(0, 0), D(1, 0), include_start=False)) == [
-        (C(1, 0), "b"),
-    ]
-    assert list(grid.iter_delta(C(0, 0), D(1, 1))) == [
-        (C(0, 0), "a"),
-        (C(1, 1), "d"),
-    ]
-    assert list(grid.iter_delta(C(0, 0), D(1, 1), include_start=False)) == [
-        (C(1, 1), "d"),
-    ]
-    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(1, 1)])) == [
-        (C(1, 0), "b", D(1, 0)),
-        (C(1, 1), "d", D(1, 1)),
-    ]
-
-
-def test_dense_grid_iter_deltas_max_steps() -> None:
-    C = Coord.from_2d
-    D = Delta.from_2d
-
-    grid = DenseGrid.from_2d(
-        [["a", "b", "c", "d"], ["e", "f", "g", "h"], ["i", "j", "k", "l"]]
-    )
-    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(0, 1)], max_steps=1)) == [
-        (C(1, 0), "b", D(1, 0)),
-        (C(0, 1), "e", D(0, 1)),
-    ]
-    assert list(grid.iter_deltas(C(0, 0), [D(1, 0), D(0, 1)], max_steps=2)) == [
-        (C(1, 0), "b", D(1, 0)),
-        (C(2, 0), "c", D(1, 0)),
-        (C(0, 1), "e", D(0, 1)),
-        (C(0, 2), "i", D(0, 1)),
-    ]
+            yield [
+                (coord, value, delta)
+                for coord, value in self.iter_delta(
+                    start=start,
+                    delta=delta,
+                    include_start=include_start,
+                    max_steps=max_steps,
+                )
+            ]
 
 
 class SparseGrid(Generic[T]):
