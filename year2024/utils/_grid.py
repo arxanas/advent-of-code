@@ -2,7 +2,7 @@ import heapq
 import itertools
 from abc import abstractmethod
 from collections import deque
-from collections.abc import Callable, Generator, Iterable, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
     AbstractSet,
@@ -161,11 +161,18 @@ class Delta:
     def invert(self) -> "Delta":
         return self * -1
 
-    def rotate_left(self) -> "Delta":
+    def rotate_cw(self) -> "Delta":
         return Delta(x=-self.y, y=self.x, z=self.z)
 
-    def rotate_right(self) -> "Delta":
+    def rotate_ccw(self) -> "Delta":
         return Delta(x=self.y, y=-self.x, z=self.z)
+
+    # FIXME: These might be inverted?
+    # def rotate_left(self) -> "Delta":
+    #     return Delta(x=-self.y, y=self.x, z=self.z)
+    #
+    # def rotate_right(self) -> "Delta":
+    #     return Delta(x=self.y, y=-self.x, z=self.z)
 
     def manhattan_distance(self) -> int:
         return abs(self.x) + abs(self.y) + abs(self.z)
@@ -247,11 +254,10 @@ class DenseGrid(Generic[T]):
     def __init__(self, cells: list[list[list[T]]]) -> None:
         self._cells = cells
 
-    def dump(self) -> str:
+    def __repr__(self) -> str:
         r"""Dump the grid to a string, with the top layer first.
 
-        >>> grid = DenseGrid([[["a", "b"], ["c", "d"]], [["e", "f"], ["g", "h"]]])
-        >>> print(grid.dump())
+        >>> DenseGrid([[["a", "b"], ["c", "d"]], [["e", "f"], ["g", "h"]]])
         ab
         cd
         ---
@@ -310,7 +316,7 @@ class DenseGrid(Generic[T]):
         each character is a cell. The string is `strip`ped before creating the
         grid.
 
-        >>> print(DenseGrid.from_str("ab\ncd").dump())
+        >>> DenseGrid.from_str("ab\ncd")
         ab
         cd
         """
@@ -351,6 +357,61 @@ class DenseGrid(Generic[T]):
             return self[coord]
         else:
             return default
+
+    def find(self, value: T) -> Iterable[Coord]:
+        r"""Find all coordinates with the given value. (Combine with
+        `u.only`/`u.only_exn` to get only the first one.)
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.find("d"))
+        [Coord(x=0, y=1, z=0)]
+
+        >>> grid = DenseGrid.from_str("abc\nabc\nabc")
+        >>> list(grid.find("a"))
+        [Coord(x=0, y=0, z=0), Coord(x=0, y=1, z=0), Coord(x=0, y=2, z=0)]
+        """
+        for coord in self.iter_coords():
+            if self[coord] == value:
+                yield coord
+
+    def copy(self) -> "DenseGrid[T]":
+        r"""Return a copy of the grid.
+
+        >>> grid1 = DenseGrid.from_str("abc\ndef\nghi")
+        >>> grid2 = grid1.copy()
+        >>> grid2[Coord.from_2d(0, 0)] = "z"
+        >>> grid1
+        abc
+        def
+        ghi
+        >>> grid2
+        zbc
+        def
+        ghi
+        """
+        return DenseGrid(
+            [[[cell for cell in row] for row in layer] for layer in self._cells]
+        )
+
+    def update(self, cells: Mapping[Coord, T]) -> "DenseGrid[T]":
+        r"""Update the grid with the given coordinate-cell mappings.
+
+        This returns a new grid, leaving the original grid unchanged.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> grid.update({Coord.from_2d(0, 0): "z", Coord.from_2d(1, 1): "y"})
+        zbc
+        dyf
+        ghi
+        >>> grid
+        abc
+        def
+        ghi
+        """
+        result = self.copy()
+        for coord, value in cells.items():
+            result[coord] = value
+        return result
 
     @property
     def width(self) -> int:
