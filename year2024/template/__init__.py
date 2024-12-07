@@ -1,3 +1,6 @@
+import collections
+import functools
+import itertools
 import logging
 import math
 import os
@@ -5,8 +8,6 @@ import re
 import sys
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, replace
-from functools import *
-from itertools import *
 
 import z3  # type: ignore[import]
 
