@@ -44,9 +44,14 @@ select = [
     "E",
     "W",
     # isort
-    "I001",
+    "I",
+    "FA102", # future-required-type-annotation
 ]
 ignore = ["E203", "E501", "E741", "F403", "F405"]
+fixable = ["ALL"]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
 
 [tool.setuptools]
 packages = ["year2020", "year2021", "year2022", "year2023", "year2024"]

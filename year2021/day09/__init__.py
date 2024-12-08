@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from functools import reduce
 from typing import Iterable, Mapping, Set, Tuple

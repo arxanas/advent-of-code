@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from itertools import chain

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._funs import (
     InclusiveInterval,
     all_different,
