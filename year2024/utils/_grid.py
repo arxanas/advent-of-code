@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import heapq
 import itertools
 from abc import abstractmethod
@@ -155,8 +157,14 @@ class Delta:
     def __add__(self, other: "Delta") -> "Delta":
         return Delta(x=self.x + other.x, y=self.y + other.y, z=self.z + other.z)
 
+    def __sub__(self, other: "Delta") -> "Delta":
+        return Delta(x=self.x - other.x, y=self.y - other.y, z=self.z - other.z)
+
     def __mul__(self, scalar: int) -> "Delta":
         return Delta(x=self.x * scalar, y=self.y * scalar, z=self.z * scalar)
+
+    def __neg__(self) -> "Delta":
+        return self * -1
 
     def invert(self) -> "Delta":
         return self * -1
@@ -373,6 +381,17 @@ class DenseGrid(Generic[T]):
         for coord in self.iter_coords():
             if self[coord] == value:
                 yield coord
+
+    def find_where(self, f: Callable[[T], bool]) -> Iterable[tuple[Coord, T]]:
+        r"""Find all coordinates where the value satisfies the given predicate.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.find_where(lambda x: x in "aeiou"))
+        [(Coord(x=0, y=0, z=0), 'a'), (Coord(x=1, y=1, z=0), 'e'), (Coord(x=2, y=2, z=0), 'i')]
+        """
+        for coord, cell in self.iter_cells():
+            if f(cell):
+                yield (coord, cell)
 
     def copy(self) -> "DenseGrid[T]":
         r"""Return a copy of the grid.

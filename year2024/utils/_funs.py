@@ -15,6 +15,8 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 def split_into_groups_of_size_n(input: Sequence[T], n: int) -> list[Sequence[T]]:
@@ -381,6 +383,20 @@ def split(
             current.append(elem)
     if current:
         yield current
+
+
+def group_by(iterable: Iterable[tuple[K, V]]) -> dict[K, list[V]]:
+    """Group the elements in the given iterable by the first element of the tuple.
+
+    >>> group_by([(1, "a"), (2, "b"), (1, "c")])
+    {1: ['a', 'c'], 2: ['b']}
+    """
+    result: dict[K, list[V]] = {}
+    for k, v in iterable:
+        if k not in result:
+            result[k] = []
+        result[k].append(v)
+    return result
 
 
 def find(
