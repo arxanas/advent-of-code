@@ -2,6 +2,8 @@
 Note: I am not proud of this code.
 """
 
+from __future__ import annotations
+
 import sys
 from collections import *
 from functools import *
