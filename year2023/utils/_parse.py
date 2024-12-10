@@ -36,7 +36,7 @@ def extract_int_list_pairs(input: str) -> list[tuple[int, int]]:
     """Call `extract_list` and group adjacent pairs of integers into tuples."""
     ints = extract_int_list(input)
     if len(ints) % 2 != 0:
-        logging.warn(
+        logging.warning(
             "Input list to %s has odd length (%d), ignoring last element",
             extract_int_list_pairs.__name__,
             input,
