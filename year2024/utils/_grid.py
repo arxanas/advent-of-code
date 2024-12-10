@@ -620,6 +620,18 @@ class DenseGrid(Generic[T]):
         for coord in self.iter_coords():
             yield (coord, self[coord])
 
+    def neighbors(self, node: Coord, deltas: list[Delta]) -> Iterable[Coord]:
+        r"""Iterate over the neighbors of the given node in the grid.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> list(grid.neighbors(Coord.from_2d(1, 1), Deltas2d.CARDINAL))
+        [Coord(x=1, y=0, z=0), Coord(x=2, y=1, z=0), Coord(x=1, y=2, z=0), Coord(x=0, y=1, z=0)]
+        """
+        for delta in deltas:
+            neighbor = node + delta
+            if neighbor in self:
+                yield neighbor
+
     def iter_delta(
         self,
         start: Coord,
@@ -906,6 +918,17 @@ def first_completed_generator(generators: list[Generator[T, None, U]]) -> U:
 
     If multiple generators complete at the same time, the first one in the list
     is returned.
+
+    >>> def generator1() -> Generator[int, None, str]:
+    ...     yield 1
+    ...     yield 2
+    ...     return "generator1"
+    ...
+    >>> def generator2() -> Generator[int, None, str]:
+    ...     yield 3
+    ...     return "generator2"
+    ...
+    >>> assert first_completed_generator([generator1(), generator2()]) == "generator2"
     """
     while True:
         for generator in generators:
@@ -915,14 +938,14 @@ def first_completed_generator(generators: list[Generator[T, None, U]]) -> U:
                 return e.value
 
 
-def test_first_completed_generator() -> None:
-    def generator1() -> Generator[int, None, str]:
-        yield 1
-        yield 2
-        return "generator1"
+def run_generator(generator: Generator[T, None, U]) -> U:
+    """Run the given generator to completion, returning the final value.
 
-    def generator2() -> Generator[int, None, str]:
-        yield 3
-        return "generator2"
-
-    assert first_completed_generator([generator1(), generator2()]) == "generator2"
+    >>> def generator() -> Generator[int, None, str]:
+    ...     yield 1
+    ...     yield 2
+    ...     return "done"
+    ...
+    >>> assert run_generator(generator()) == "done"
+    """
+    return first_completed_generator([generator])

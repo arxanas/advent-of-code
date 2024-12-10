@@ -34,6 +34,7 @@ from ._grid import (
     ShortestPath,
     SparseGrid,
     first_completed_generator,
+    run_generator,
 )
 from ._parse import (
     extract_int_list,
@@ -70,6 +71,7 @@ __all__ = [
     "only",
     "product_float",
     "product_int",
+    "run_generator",
     "ShortestPath",
     "sliding_windows",
     "Solution",
