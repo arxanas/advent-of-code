@@ -54,7 +54,7 @@ class Solution(u.Solution):
         flood_fill = FloodFill(grid=self.grid)
         return (
             Stream.of(self.grid.find(0))
-            .map(lambda node: u.run_generator(flood_fill.run([node])))
+            .map(lambda node: flood_fill.run([node]))
             .flat_map(Stream.of)
             .filter(lambda node: self.grid[node] == 9)
             .count()

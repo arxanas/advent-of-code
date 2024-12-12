@@ -5,13 +5,14 @@ import itertools
 from abc import abstractmethod
 from collections import deque
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     AbstractSet,
     Generic,
     Optional,
     TypeVar,
     overload,
+    override,
 )
 
 from hypothesis import given
@@ -632,6 +633,10 @@ class DenseGrid(Generic[T]):
             if neighbor in self:
                 yield neighbor
 
+    def neighbors_cardinal(self, node: Coord) -> Iterable[Coord]:
+        """Call `neighbors` with the cardinal directions (`Deltas2d.CARDINAL`)."""
+        return self.neighbors(node, deltas=Deltas2d.CARDINAL)
+
     def iter_delta(
         self,
         start: Coord,
@@ -887,18 +892,36 @@ def test_shortest_path() -> None:
     assert shortest_path.run([1]) == {9: (8, [1, 3, 6, 9])}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class FloodFillState(Generic[T]):
     next: deque[T]
     seen: AbstractSet[T]
 
 
+@dataclass(frozen=True, kw_only=True)
+class ConnectedComponents(Generic[T]):
+    components: frozenset[frozenset[T]]
+    """Groups of connected nodes."""
+
+    index: dict[T, frozenset[T]]
+    """Mapping from node to the component it belongs to."""
+
+
 class FloodFill(Generic[T]):
     @abstractmethod
-    def get_neighbors(self, node: T) -> list[T]:
+    def get_neighbors(self, node: T) -> Iterable[T]:
         raise NotImplementedError()
 
-    def run(self, start_nodes: list[T]) -> Generator[FloodFillState[T], None, set[T]]:
+    def run(self, start_nodes: list[T]) -> frozenset[T]:
+        """Run the flood-fill algorithm starting from all `start_nodes`
+        simultaneously. Returns all nodes reachable from any of the elements of
+        `start_nodes`."""
+        return run_generator(self.run_states(start_nodes))
+
+    def run_states(
+        self, start_nodes: list[T]
+    ) -> Generator[FloodFillState[T], None, frozenset[T]]:
+        """Run the flood-fill algorithm while yielding intermediate states."""
         next = deque(start_nodes)
         seen = set()
         while next:
@@ -909,7 +932,38 @@ class FloodFill(Generic[T]):
             yield FloodFillState(next=next, seen=seen)
             for neighbor in self.get_neighbors(node):
                 next.append(neighbor)
-        return seen
+        return frozenset(seen)
+
+    def connected_components(self, nodes: Iterable[T]) -> ConnectedComponents[T]:
+        """For each node in `nodes`, find the connected component it belongs
+        to."""
+        components = []
+        index = {}
+        for node in nodes:
+            if node in index:
+                continue
+            seen = self.run([node])
+            components.append(seen)
+            for seen_node in seen:
+                index[seen_node] = seen
+        return ConnectedComponents(components=frozenset(components), index=index)
+
+
+@dataclass
+class GridFloodFill(FloodFill[Coord], Generic[T]):
+    grid: DenseGrid[T]
+    deltas: list[Delta] = field(default_factory=lambda: Deltas2d.CARDINAL)
+
+    @override
+    def get_neighbors(self, node: Coord) -> Iterable[Coord]:
+        for neighbor in self.grid.neighbors(node, deltas=self.deltas):
+            if self.are_connected(node, neighbor):
+                yield neighbor
+
+    def are_connected(self, node: Coord, neighbor: Coord) -> bool:
+        """Default implementation considers coordinates 'connected' if they have
+        the same value. Override to provide domain-specific behavior."""
+        return self.grid[node] == self.grid[neighbor]
 
 
 def first_completed_generator(generators: list[Generator[T, None, U]]) -> U:
