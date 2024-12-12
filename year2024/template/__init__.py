@@ -6,12 +6,14 @@ import itertools
 import logging
 import math
 import os
+import pprint
 import re
 import sys
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, replace
 
-import z3  # type: ignore[import]
+from pystreamapi import Stream
+import z3
 
 from .. import utils as u
 
