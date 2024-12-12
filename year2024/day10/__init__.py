@@ -40,23 +40,18 @@ class Solution(u.Solution):
         return cls(grid=u.DenseGrid.from_str_mapped(input.strip(), int))
 
     def part1(self) -> int:
-        @dataclass(frozen=True, kw_only=True)
-        class FloodFill(u.FloodFill[u.Coord]):
+        class FloodFill(u.GridFloodFill):
             grid: u.DenseGrid[int]
 
-            def get_neighbors(self, node: u.Coord) -> list[u.Coord]:
-                return (
-                    Stream.of(self.grid.neighbors(node, deltas=u.Deltas2d.CARDINAL))
-                    .filter(lambda neighbor: self.grid[neighbor] == self.grid[node] + 1)
-                    .to_list()
-                )
+            def are_connected(self, node: u.Coord, neighbor: u.Coord) -> bool:
+                return self.grid[neighbor] == self.grid[node] + 1
 
         flood_fill = FloodFill(grid=self.grid)
         return (
             Stream.of(self.grid.find(0))
-            .map(lambda node: flood_fill.run([node]))
+            .map(lambda coord: flood_fill.run([coord]))
             .flat_map(Stream.of)
-            .filter(lambda node: self.grid[node] == 9)
+            .filter(lambda coord: self.grid[coord] == 9)
             .count()
         )
 
@@ -66,7 +61,7 @@ class Solution(u.Solution):
                 return 1
 
             return (
-                Stream.of(self.grid.neighbors(start_node, deltas=u.Deltas2d.CARDINAL))
+                Stream.of(self.grid.neighbors_cardinal(start_node))
                 .filter(
                     lambda neighbor: self.grid[neighbor] == self.grid[start_node] + 1
                 )

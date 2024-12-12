@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -96,12 +97,10 @@ class Solution(u.Solution):
         return area * perimeter
 
     def region_price_part2(self, region: set[u.Coord]) -> int:
-        fences: dict[u.Coord, set[u.Delta]] = {}
+        fences: dict[u.Coord, set[u.Delta]] = collections.defaultdict(set)
         for coord in region:
             for delta in u.Deltas2d.CARDINAL:
                 if coord + delta not in region:
-                    if coord not in fences:
-                        fences[coord] = set()
                     fences[coord].add(delta)
 
         class SideFloodFill(u.FloodFill[tuple[u.Coord, u.Delta]]):
