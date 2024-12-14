@@ -729,7 +729,18 @@ class SparseGrid(Generic[T]):
         self._cells = cells
 
     def __repr__(self) -> str:
-        return "SparseGrid({!r})".format(self._cells)
+        """Dump the grid to a string, with the top row first."""
+        if len(self._cells) == 0:
+            return ""
+        (min_x, max_x) = minmax(c.x for c in self._cells.keys())
+        (min_y, max_y) = minmax(c.y for c in self._cells.keys())
+        lines = []
+        for y in range(min_y, max_y + 1):
+            line = []
+            for x in range(min_x, max_x + 1):
+                line.append(str(self._cells.get(Coord(x, y, 0), ".")))
+            lines.append("".join(line))
+        return "\n".join(lines)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, SparseGrid) and self._cells == other._cells
@@ -769,20 +780,6 @@ class SparseGrid(Generic[T]):
         """
         (min_y, max_y) = minmax(c.y for c in self._cells.keys())
         return max_y - min_y + 1
-
-    def dump(self) -> str:
-        """Dump the grid to a string, with the top row first."""
-        if len(self._cells) == 0:
-            return ""
-        (min_x, max_x) = minmax(c.x for c in self._cells.keys())
-        (min_y, max_y) = minmax(c.y for c in self._cells.keys())
-        lines = []
-        for y in range(min_y, max_y + 1):
-            line = []
-            for x in range(min_x, max_x + 1):
-                line.append(str(self._cells.get(Coord(x, y, 0), ".")))
-            lines.append("".join(line))
-        return "\n".join(lines)
 
     def copy(self) -> "SparseGrid[T]":
         """Return a copy of the grid."""
