@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import heapq
 import itertools
 from abc import abstractmethod
@@ -136,13 +137,13 @@ class Delta:
 
     @classmethod
     def parse_from_direction(cls, direction: str) -> "Delta":
-        if direction in ["N", "U"]:
+        if direction in ["N", "U", "^"]:
             return Deltas2d.NORTH
-        elif direction in ["E", "R"]:
+        elif direction in ["E", "R", ">"]:
             return Deltas2d.EAST
-        elif direction in ["S", "D"]:
+        elif direction in ["S", "D", "v"]:
             return Deltas2d.SOUTH
-        elif direction in ["W", "L"]:
+        elif direction in ["W", "L", "<"]:
             return Deltas2d.WEST
         elif direction in ["NE", "UR"]:
             return Deltas2d.NORTHEAST
@@ -340,12 +341,22 @@ class DenseGrid(Generic[T]):
     def __getitem__(self, coord: Coord) -> T:
         """Get the value at the given coordinate."""
         (x, y, z) = coord.to_tuple()
-        return self._cells[z][y][x]
+        try:
+            return self._cells[z][y][x]
+        except IndexError as e:
+            raise IndexError(
+                f"{coord=} is out of bounds for {self.width=} {self.height=} {self.depth=}"
+            ) from e
 
     def __setitem__(self, coord: Coord, value: T) -> None:
         """Set the value at the given coordinate."""
         (x, y, z) = coord.to_tuple()
-        self._cells[z][y][x] = value
+        try:
+            self._cells[z][y][x] = value
+        except IndexError as e:
+            raise IndexError(
+                f"{coord=} is out of bounds for {self.width=} {self.height=} {self.depth=}"
+            ) from e
 
     def __contains__(self, coord: Coord) -> bool:
         """Return whether the given coordinate is in the grid."""
@@ -394,6 +405,15 @@ class DenseGrid(Generic[T]):
             if f(cell):
                 yield (coord, cell)
 
+    def counts(self) -> collections.Counter[T]:
+        r"""Count the occurrences of each value in the grid.
+
+        >>> grid = DenseGrid.from_str("..#\n..#\n...")
+        >>> grid.counts()
+        Counter({'.': 7, '#': 2})
+        """
+        return collections.Counter(cell for (_coord, cell) in self.iter_cells())
+
     def copy(self) -> "DenseGrid[T]":
         r"""Return a copy of the grid.
 
@@ -413,13 +433,12 @@ class DenseGrid(Generic[T]):
             [[[cell for cell in row] for row in layer] for layer in self._cells]
         )
 
-    def update(self, cells: Mapping[Coord, T]) -> "DenseGrid[T]":
-        r"""Update the grid with the given coordinate-cell mappings.
-
-        This returns a new grid, leaving the original grid unchanged.
+    def replace(self, cells: Mapping[Coord, T]) -> DenseGrid[T]:
+        r"""Return a new grid with the updated coordinate-cell mappings, leaving
+        the original grid unchanged.
 
         >>> grid = DenseGrid.from_str("abc\ndef\nghi")
-        >>> grid.update({Coord.from_2d(0, 0): "z", Coord.from_2d(1, 1): "y"})
+        >>> grid.replace({Coord.from_2d(0, 0): "z", Coord.from_2d(1, 1): "y"})
         zbc
         dyf
         ghi
@@ -429,9 +448,21 @@ class DenseGrid(Generic[T]):
         ghi
         """
         result = self.copy()
-        for coord, value in cells.items():
-            result[coord] = value
+        result.update(cells)
         return result
+
+    def update(self, cells: Mapping[Coord, T]) -> None:
+        r"""Update the grid with the given coordinate-cell mappings in-place.
+
+        >>> grid = DenseGrid.from_str("abc\ndef\nghi")
+        >>> grid.update({Coord.from_2d(0, 0): "z", Coord.from_2d(1, 1): "y"})
+        >>> grid
+        zbc
+        dyf
+        ghi
+        """
+        for coord, value in cells.items():
+            self[coord] = value
 
     @property
     def width(self) -> int:
