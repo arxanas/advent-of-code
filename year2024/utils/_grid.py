@@ -959,7 +959,7 @@ class ConnectedComponents(Generic[T]):
     """Mapping from node to the component it belongs to."""
 
 
-class FloodFill(Generic[T]):
+class FloodFill(ABC, Generic[T]):
     @abstractmethod
     def get_neighbors(self, node: T) -> Iterable[T]:
         raise NotImplementedError()
