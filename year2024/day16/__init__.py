@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TypeAlias, override
+from typing import TypeAlias, final, override
 
 from .. import utils as u
 
@@ -90,12 +90,13 @@ def test_part2_example2() -> None:
 Node: TypeAlias = tuple[u.Coord, u.Delta]
 
 
-@dataclass
+@final
+@dataclass(frozen=True, kw_only=True)
 class FindShortestPath(u.FindShortestPath[Node]):
     grid: u.DenseGrid[str]
 
     @override
-    def is_end_node(self, node):
+    def is_end_node(self, node: Node) -> bool:
         (coord, _delta) = node
         return self.grid[coord] == "E"
 

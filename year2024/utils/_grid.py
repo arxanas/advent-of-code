@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import itertools
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -854,7 +854,7 @@ class ShortestPathNode(Generic[T]):
         return self.cost < other.cost
 
 
-class FindShortestPath(Generic[T]):
+class FindShortestPath(ABC, Generic[T]):
     """Generic shortest path algorithm.
 
     You should subclass this class and override the `get_neighbors` method.
