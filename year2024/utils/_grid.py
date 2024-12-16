@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import heapq
 import itertools
 from abc import abstractmethod
 from collections import deque
@@ -16,6 +15,7 @@ from typing import (
     override,
 )
 
+import pqdict
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -836,7 +836,25 @@ class SparseGrid(Generic[T]):
             yield (coord, value)
 
 
-class ShortestPath(Generic[T]):
+@dataclass(frozen=True, kw_only=True)
+class ShortestPathNode(Generic[T]):
+    cost: int
+    end_node: T
+    predecessors: list[ShortestPathNode]
+
+    def paths(self) -> Iterable[list[T]]:
+        """Yield all paths from the start node to the end node."""
+        if not self.predecessors:
+            yield [self.end_node]
+        for predecessor in self.predecessors:
+            for path in predecessor.paths():
+                yield path + [self.end_node]
+
+    def __lt__(self, other: ShortestPathNode) -> bool:
+        return self.cost < other.cost
+
+
+class FindShortestPath(Generic[T]):
     """Generic shortest path algorithm.
 
     You should subclass this class and override the `get_neighbors` method.
@@ -844,10 +862,20 @@ class ShortestPath(Generic[T]):
     Only integral distances are supported. The graph must be finite, or at
     least, the `get_neighbors` method should produce a finite subgraph of the
     original graph when queried.
-    """
 
-    def __init__(self) -> None:
-        self._best_lengths: dict[T, tuple[int, list[T]]] = {}
+    >>> class FindShortestPathImpl(FindShortestPath[int]):
+    ...     def is_end_node(self, node: int) -> bool:
+    ...         return node == 9
+    ...
+    ...     def get_neighbors(self, node: int) -> list[tuple[int, int]]:
+    ...         if node >= 20:
+    ...             return []
+    ...         else:
+    ...             return [(node + 2, 2), (node + 3, 3)]
+    ...
+    >>> [list(shortest_path_node.paths()) for shortest_path_node in FindShortestPathImpl().run([1])]
+    [[[1, 3, 6, 9], [1, 4, 6, 9], [1, 4, 7, 9], [1, 3, 5, 7, 9]]]
+    """
 
     @abstractmethod
     def is_end_node(self, node: T) -> bool:
@@ -858,66 +886,62 @@ class ShortestPath(Generic[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_neighbors(self, node: T) -> list[tuple[T, int]]:
-        """Returns a list of (neighbor, distance) pairs for the given node.
+    def get_neighbors(self, node: T) -> Iterable[tuple[T, int]]:
+        """Returns a list of (neighbor, cost) pairs for the given node.
 
         Should be overridden by the implementor.
         """
         raise NotImplementedError()
 
-    def run(self, start_nodes: list[T]) -> dict[T, tuple[int, list[T]]]:
+    def run(self, start_nodes: list[T]) -> list[ShortestPathNode[T]]:
         """Find the shortest paths from any of the start nodes to any of the end
         nodes.
         """
-        self._best_lengths = {node: (0, [node]) for node in start_nodes}
 
-        @dataclass(frozen=True)
-        class HeapNode:
-            length: int
-            node: T
-
-            def __lt__(self, other: "HeapNode") -> bool:
-                return self.length < other.length
-
-        queue = [HeapNode(length=0, node=node) for node in start_nodes]
-        while queue:
-            current_node = heapq.heappop(queue).node
-            if self.is_end_node(current_node):
+        shortest_paths = pqdict.pqdict(
+            {
+                node: ShortestPathNode(cost=0, end_node=node, predecessors=[])
+                for node in start_nodes
+            }
+        )
+        seen_nodes = set()
+        best_cost = None
+        result = []
+        for node, shortest_path_node in shortest_paths.popitems():
+            if node in seen_nodes:
                 continue
-            (current_length, current_path) = self._best_lengths[current_node]
-            for neighbor, distance in self.get_neighbors(current_node):
-                new_length = current_length + distance
-                should_enqueue = False
-                neighbor_info = self._best_lengths.get(neighbor)
-                if neighbor_info is None:
-                    should_enqueue = True
-                else:
-                    (neighbor_length, _neighbor_path) = neighbor_info
-                    if new_length < neighbor_length:
-                        should_enqueue = True
-                if should_enqueue:
-                    self._best_lengths[neighbor] = (
-                        new_length,
-                        current_path + [neighbor],
+            seen_nodes.add(node)
+            if best_cost is not None and shortest_path_node.cost > best_cost:
+                continue
+            if self.is_end_node(node):
+                if best_cost is None or shortest_path_node.cost <= best_cost:
+                    best_cost = shortest_path_node.cost
+                    result.append(shortest_path_node)
+                continue
+            neighbors = self.get_neighbors(node)
+            for neighbor, cost in neighbors:
+                assert cost >= 0
+                new_cost = shortest_path_node.cost + cost
+                if neighbor not in shortest_paths:
+                    shortest_paths[neighbor] = ShortestPathNode(
+                        cost=new_cost,
+                        end_node=neighbor,
+                        predecessors=[shortest_path_node],
                     )
-                    heapq.heappush(queue, HeapNode(length=new_length, node=neighbor))
+                elif new_cost < shortest_paths[neighbor].cost:
+                    shortest_paths[neighbor] = ShortestPathNode(
+                        cost=new_cost,
+                        end_node=neighbor,
+                        predecessors=[shortest_path_node],
+                    )
+                elif new_cost == shortest_paths[neighbor].cost:
+                    shortest_paths[neighbor].predecessors.append(shortest_path_node)
 
-        return {k: v for (k, v) in self._best_lengths.items() if self.is_end_node(k)}
-
-
-def test_shortest_path() -> None:
-    class MyShortestPath(ShortestPath[int]):
-        def is_end_node(self, node: int) -> bool:
-            return node == 9
-
-        def get_neighbors(self, node: int) -> list[tuple[int, int]]:
-            if node >= 20:
-                return []
-            else:
-                return [(node + 2, 2), (node + 3, 3)]
-
-    shortest_path = MyShortestPath()
-    assert shortest_path.run([1]) == {9: (8, [1, 3, 6, 9])}
+        return [
+            shortest_path_node
+            for shortest_path_node in result
+            if shortest_path_node.cost == best_cost
+        ]
 
 
 @dataclass(frozen=True, kw_only=True)
