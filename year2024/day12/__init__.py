@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, final, override
 
 from pystreamapi import Stream
 
@@ -103,7 +103,9 @@ class Solution(u.Solution):
                 if coord + delta not in region:
                     fences[coord].add(delta)
 
+        @final
         class SideFloodFill(u.FloodFill[tuple[u.Coord, u.Delta]]):
+            @override
             def get_neighbors(
                 self, node: tuple[u.Coord, u.Delta]
             ) -> Iterable[tuple[u.Coord, u.Delta]]:
