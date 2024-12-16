@@ -78,7 +78,7 @@ class Solution(u.Solution):
         initial_path = self.observe_path(self.grid, start_coord)
         result = 0
         for turn_coord in initial_path.seen_coords():
-            path = self.observe_path(self.grid.update({turn_coord: "#"}), start_coord)
+            path = self.observe_path(self.grid.replace({turn_coord: "#"}), start_coord)
             if path.did_loop:
                 result += 1
         return result

@@ -35,7 +35,7 @@ def test_part2() -> None:
     assert Solution.parse_input(TEST_INPUT2).part2() == PART_2_ANSWER
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class Solution(u.Solution):
     input: str
 
