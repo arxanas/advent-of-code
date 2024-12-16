@@ -9,6 +9,8 @@ dependencies = [
     { name = "hypothesis" },
     { name = "mypy" },
     { name = "mypy-extensions" },
+    { name = "networkx" },
+    { name = "pqdict" },
     { name = "pytest" },
     { name = "pytest-watcher" },
     { name = "ruff" },
@@ -22,6 +24,8 @@ requires-dist = [
     { name = "hypothesis", specifier = ">=6.122.0" },
     { name = "mypy", git = "https://github.com/python/mypy?rev=242873a2e8a1d98762b30fcf7b28a699a230279d" },
     { name = "mypy-extensions", specifier = ">=1.0.0" },
+    { name = "networkx", specifier = ">=3.4.2" },
+    { name = "pqdict", specifier = ">=1.4.0" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-watcher", specifier = ">=0.4.3" },
     { name = "ruff", specifier = ">=0.8.1" },
@@ -98,6 +102,15 @@ wheels = [
 ]
 
 [[package]]
+name = "networkx"
+version = "3.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/1d/06475e1cd5264c0b870ea2cc6fdb3e37177c1e565c43f56ff17a10e3937f/networkx-3.4.2.tar.gz", hash = "sha256:307c3669428c5362aab27c8a1260aa8f47c4e91d3891f48be0141738d8d053e1", size = 2151368 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl", hash = "sha256:df5d4365b724cf81b8c6a7312509d0c22386097011ad1abe274afd5e9d3bbc5f", size = 1723263 },
+]
+
+[[package]]
 name = "packaging"
 version = "24.2"
 source = { registry = "https://pypi.org/simple" }
@@ -113,6 +126,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/96/2d/02d4312c973c6050a18b314a5ad0b3210edb65a906f868e31c111dede4a6/pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1", size = 67955 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669", size = 20556 },
+]
+
+[[package]]
+name = "pqdict"
+version = "1.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/14/58d3393644b7a576b9b6c969628ccbfd2c324561489d4301fef48538b708/pqdict-1.4.0.tar.gz", hash = "sha256:367dc50818f1df331ed5ef9ba9a793f7b713a1d5ea6bcccd7a72392dc8bc2097", size = 87846 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/3d/fcb3b29976336a0635c858ef593e9f1bfb4b8583a1f41f6456866b428097/pqdict-1.4.0-py2.py3-none-any.whl", hash = "sha256:7c4f9d09cb867b7bfddcc3c56b74badae70c28fdeaad95df637be844103759e5", size = 8857 },
 ]
 
 [[package]]
