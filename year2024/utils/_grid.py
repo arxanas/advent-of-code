@@ -943,6 +943,16 @@ class FindShortestPath(ABC, Generic[T]):
             if shortest_path_node.cost == best_cost
         ]
 
+    def find_one_path(self, start_nodes: list[T]) -> list[T] | None:
+        """Call `run` and return the first path found, or `None` if no paths
+        were found.
+        """
+        result = self.run(start_nodes=start_nodes)
+        if result:
+            return next(iter(result[0].paths()))
+        else:
+            return None
+
 
 @dataclass(frozen=True, kw_only=True)
 class FloodFillState(Generic[T]):
