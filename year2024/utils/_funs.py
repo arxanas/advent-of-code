@@ -301,6 +301,15 @@ def iota() -> Iterable[int]:
     return itertools.count()
 
 
+def take(n: int, iterable: Iterable[T]) -> Iterable[T]:
+    """Return the first n elements of the given iterable.
+
+    >>> list(take(3, [0, 1, 2, 3, 4]))
+    [0, 1, 2]
+    """
+    return itertools.islice(iterable, n)
+
+
 def take_while(predicate: Callable[[T], bool], iterable: Iterable[T]) -> Iterable[T]:
     """Return elements from the given iterable as long as the given predicate
     returns True.
@@ -312,6 +321,24 @@ def take_while(predicate: Callable[[T], bool], iterable: Iterable[T]) -> Iterabl
     # Reimplementing this because itertools.takewhile() doesn't seem to be
     # generic.
     return itertools.takewhile(predicate, iterable)
+
+
+def skip(n: int, iterable: Iterable[T]) -> Iterable[T]:
+    """Return the elements of the given iterable after the first n elements.
+
+    >>> list(skip(3, [0, 1, 2, 3, 4]))
+    [3, 4]
+    """
+    return itertools.islice(iterable, n, None)
+
+
+def nth(n: int, iterable: Iterable[T]) -> T:
+    """Return the nth element of the given iterable.
+
+    >>> nth(3, [0, 1, 2, 3, 4])
+    3
+    """
+    return next(itertools.islice(iterable, n, None))
 
 
 def unique_ordered(iterable: Iterable[T]) -> Iterable[T]:
