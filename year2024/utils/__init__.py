@@ -42,4 +42,5 @@ from ._parse import extract_int_list_pairs as extract_int_list_pairs
 from ._parse import hex_to_dec as hex_to_dec
 from ._parse import split_line_groups as split_line_groups
 from ._parse import split_lines as split_lines
+from ._parse import tuple2 as tuple2
 from ._run import Solution as Solution

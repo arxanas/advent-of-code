@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterable
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 def split_lines(input: str) -> list[str]:
@@ -76,3 +80,29 @@ def hex_to_dec(hex: str) -> int:
     255
     """
     return int(hex, 16)
+
+
+def tuple2(value: Iterable[T]) -> tuple[T, T]:
+    """Convert an iterable to a tuple of length 2 (statically-typed).
+
+    >>> tuple2([1, 2])
+    (1, 2)
+    >>> import pytest
+    >>> with pytest.raises(ValueError):
+    ...     tuple2([1, 2, 3])
+    """
+    (v1, v2) = tuple(value)
+    return (v1, v2)
+
+
+def tuple3(value: Iterable[T]) -> tuple[T, T, T]:
+    """Convert an iterable to a tuple of length 3 (statically-typed).
+
+    >>> tuple3([1, 2, 3])
+    (1, 2, 3)
+    >>> import pytest
+    >>> with pytest.raises(ValueError):
+    ...     tuple3([1, 2])
+    """
+    (v1, v2, v3) = tuple(value)
+    return (v1, v2, v3)
