@@ -34,7 +34,7 @@ class Coord:
 
     x: int
     y: int
-    z: int
+    z: int = 0
 
     @classmethod
     def zero(cls) -> "Coord":
