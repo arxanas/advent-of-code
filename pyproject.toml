@@ -26,14 +26,6 @@ license = { text = "MIT" }
 [tool.mypy]
 follow_untyped_imports = true
 
-[tool.pdm.scripts]
-ci = { composite = [
-    "pytest",
-    "mypy .",
-    "ruff format --check .",
-    "ruff check .",
-] }
-
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
 python_files = "*.py"
