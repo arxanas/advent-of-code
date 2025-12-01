@@ -60,7 +60,14 @@ fixable = ["ALL"]
 required-imports = ["from __future__ import annotations"]
 
 [tool.setuptools]
-packages = ["year2020", "year2021", "year2022", "year2023", "year2024"]
+packages = [
+    "year2020",
+    "year2021",
+    "year2022",
+    "year2023",
+    "year2024",
+    "year2025",
+]
 
 [tool.uv.sources]
 mypy = { git = "https://github.com/python/mypy", rev = "242873a2e8a1d98762b30fcf7b28a699a230279d" }
