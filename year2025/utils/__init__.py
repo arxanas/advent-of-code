@@ -9,6 +9,7 @@ from ._funs import count as count
 from ._funs import flatten as flatten
 from ._funs import floyd_warshall as floyd_warshall
 from ._funs import group_by as group_by
+from ._funs import max_subsequence as max_subsequence
 from ._funs import maybe_strip_prefix as maybe_strip_prefix
 from ._funs import minmax as minmax
 from ._funs import nth as nth
@@ -20,6 +21,7 @@ from ._funs import skip as skip
 from ._funs import sliding_windows as sliding_windows
 from ._funs import split_into_groups_of_size_n as split_into_groups_of_size_n
 from ._funs import split_into_n_groups_exn as split_into_n_groups_exn
+from ._funs import subsequences as subsequences
 from ._funs import take as take
 from ._funs import take_while as take_while
 from ._funs import transpose as transpose
