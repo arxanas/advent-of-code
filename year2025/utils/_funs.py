@@ -528,6 +528,84 @@ def find_subsequence(input: Sequence[T], subsequence: Sequence[T]) -> Optional[i
     return None
 
 
+def subsequences(seq: Sequence[T], length: int) -> Iterable[Sequence[T]]:
+    """Return all subsequences of the given sequence.
+
+    >>> list(subsequences([1, 2, 3], length=2))
+    [[1, 2], [1, 3], [2, 3]]
+
+    >>> list(subsequences([1, 2, 3], length=0))
+    [[]]
+
+    >>> list(subsequences([1, 2, 3], length=3))
+    [[1, 2, 3]]
+    """
+
+    def helper(seq: Sequence[T], start: int, length: int) -> Iterable[list[T]]:
+        if length == 0:
+            yield []
+        elif start >= len(seq):
+            return
+        else:
+            for i in range(start, len(seq)):
+                curr = seq[i]
+                for subsequence in helper(seq, start=i + 1, length=length - 1):
+                    result = [curr] + subsequence
+                    if len(result) == length:
+                        yield result
+
+    yield from helper(seq, start=0, length=length)
+
+
+def max_subsequence(seq: Sequence[T], length: int) -> Sequence[T]:
+    """Return the lexicographically-greatest subsequence of
+    the given sequence with the given length.
+
+    >>> max_subsequence([1, 2, 3, 4, 5], length=2)
+    (4, 5)
+
+    >>> max_subsequence("azbyx", length=4)
+    ('z', 'b', 'y', 'x')
+
+    >>> max_subsequence("abc", length=0)
+    ()
+
+    >>> max_subsequence("811111111111119", length=2)
+    ('8', '9')
+    >>> max_subsequence("811111111111119", length=12)
+    ('8', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '9')
+    """
+    if length > len(seq):
+        raise ValueError(f"{length=} is greater than {len(seq)=}")
+    if length == 0:
+        return ()
+    eligible = seq[: len(seq) - length + 1]
+    (i, val) = max(
+        ((i, val) for i, val in enumerate(eligible)),
+        key=lambda x: (x[1], -x[0]),
+    )
+    result = (val, *max_subsequence(seq[i + 1 :], length=length - 1))
+    assert len(result) == length
+    return result
+
+
+@st.composite
+def _st_max_subsequence_test_case(draw: st.DrawFn) -> tuple[str, int]:
+    seq = draw(st.text("123456789", min_size=1, max_size=5))
+    length = draw(st.integers(min_value=1, max_value=len(seq)))
+    return seq, length
+
+
+@given(_st_max_subsequence_test_case())
+def test_max_subsequence(case: tuple[str, int]) -> None:
+    (seq, length) = case
+    expected = max(
+        (tuple(subsequence) for subsequence in subsequences(seq, length=length)),
+    )
+    actual = max_subsequence(seq, length=length)
+    assert actual == expected
+
+
 def minmax(iterable: Iterable[T]) -> tuple[T, T]:
     """Return the minimum and maximum elements in the given iterable.
 

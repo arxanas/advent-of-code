@@ -489,6 +489,16 @@ class DenseGrid(Generic[T]):
         """Return whether the grid is 2D, i.e. has only one layer."""
         return self.depth == 1
 
+    def rows(self) -> Iterable[list[T]]:
+        """Iterate over the rows of the grid, from top to bottom."""
+        for y in range(self.height):
+            yield [self[Coord(x, y, 0)] for x in range(self.width)]
+
+    def columns(self) -> Iterable[list[T]]:
+        """Iterate over the columns of the grid, from left to right."""
+        for x in range(self.width):
+            yield [self[Coord(x, y, 0)] for y in range(self.height)]
+
     def iter_left_edge(self) -> Iterable[tuple[Coord, T]]:
         r"""Iterate over the left edge of the grid, from top to bottom.
 
