@@ -14,6 +14,7 @@ from dataclasses import dataclass, replace
 
 from pystreamapi import Stream
 import networkx as nx
+import portion as P
 import z3
 
 from .. import utils as u
