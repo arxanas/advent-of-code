@@ -1,7 +1,7 @@
 [tools]
 cargo-binstall = "1.12.3"
 "cargo:aoc-cli" = "0.12.0"
-uv = "0.7.13"
+uv = "latest"
 
 [tasks."check"]
 depends = ["check:*"]
