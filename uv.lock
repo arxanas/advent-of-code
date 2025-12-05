@@ -11,6 +11,7 @@ dependencies = [
     { name = "mypy" },
     { name = "mypy-extensions" },
     { name = "networkx" },
+    { name = "portion" },
     { name = "pqdict" },
     { name = "pytest" },
     { name = "pytest-watcher" },
@@ -26,6 +27,7 @@ requires-dist = [
     { name = "mypy", git = "https://github.com/python/mypy?rev=242873a2e8a1d98762b30fcf7b28a699a230279d" },
     { name = "mypy-extensions", specifier = ">=1.0.0" },
     { name = "networkx", specifier = ">=3.4.2" },
+    { name = "portion", specifier = ">=2.6.1" },
     { name = "pqdict", specifier = ">=1.4.0" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-watcher", specifier = ">=0.4.3" },
@@ -127,6 +129,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/96/2d/02d4312c973c6050a18b314a5ad0b3210edb65a906f868e31c111dede4a6/pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1", size = 67955, upload-time = "2024-04-20T21:34:42.531Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669", size = 20556, upload-time = "2024-04-20T21:34:40.434Z" },
+]
+
+[[package]]
+name = "portion"
+version = "2.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sortedcontainers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/eb/fb2cc91b0214c0c6028cb4b29d309142687c740d1daf7c36c771a0aa5ac1/portion-2.6.1.tar.gz", hash = "sha256:44b1f7d57e052993c4157e519dc447e57b87a4e5e00a77c1c50e7044104e53c6", size = 61345, upload-time = "2025-05-25T13:50:46.683Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/9e/21c4088d1d433cfbf0578f138a6df59527dbd9e9d67355ee31b17e6dc774/portion-2.6.1-py3-none-any.whl", hash = "sha256:764d0be5479842f011feccc6f4bf80454dd944ef16309fceb2b5ae229cf05df3", size = 27389, upload-time = "2025-05-25T13:50:45.295Z" },
 ]
 
 [[package]]
