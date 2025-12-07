@@ -19,7 +19,7 @@ import pqdict
 from hypothesis import given
 from hypothesis import strategies as st
 
-from . import all_same, minmax, unique_ordered
+from . import all_same, minmax, only_exn, unique_ordered
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -363,6 +363,13 @@ class DenseGrid(Generic[T]):
         (x, y, z) = coord.to_tuple()
         return 0 <= x < self.width and 0 <= y < self.height and 0 <= z < self.depth
 
+    def __eq__(self, other: object) -> bool:
+        """Return whether the two grids are equal (contain the same cells in the
+        same positions)."""
+        if not isinstance(other, DenseGrid):
+            return NotImplemented
+        return self._cells == other._cells
+
     @overload
     def get(self, coord: Coord, default: U) -> T | U: ...
 
@@ -379,8 +386,8 @@ class DenseGrid(Generic[T]):
             return default
 
     def find(self, value: T) -> Iterable[Coord]:
-        r"""Find all coordinates with the given value. (Combine with
-        `u.only`/`u.only_exn` to get only the first one.)
+        r"""Find all coordinates with the given value. (Use `u.find_only` or
+        `Grid.find_only_exn` to get the only coordinate with the given value.)
 
         >>> grid = DenseGrid.from_str("abc\ndef\nghi")
         >>> list(grid.find("d"))
@@ -393,6 +400,20 @@ class DenseGrid(Generic[T]):
         for coord in self.iter_coords():
             if self[coord] == value:
                 yield coord
+
+    def find_only_exn(self, value: T) -> Coord:
+        r"""Find the only coordinate with the given value, or raise an exception if
+        there is not exactly one coordinate with the given value.
+
+        >>> grid = DenseGrid.from_str("abc\nxxx")
+        >>> grid.find_only_exn("b")
+        Coord(x=1, y=0, z=0)
+
+        >>> import pytest
+        >>> with pytest.raises(ValueError, match="Expected only one element"):
+        ...     grid.find_only_exn("x")
+        """
+        return only_exn(self.find(value))
 
     def find_where(self, f: Callable[[T], bool]) -> Iterable[tuple[Coord, T]]:
         r"""Find all coordinates where the value satisfies the given predicate.
