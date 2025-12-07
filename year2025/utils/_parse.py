@@ -23,7 +23,7 @@ def split_line_groups(input: str) -> list[str]:
     >>> split_line_groups("foo\\n\\nbar\\n\\nbaz")
     ['foo', 'bar', 'baz']
     """
-    return input.strip().split("\n\n")
+    return re.split(r"\n\s*?\n", input.strip())
 
 
 def extract_int_list(input: str) -> list[int]:
