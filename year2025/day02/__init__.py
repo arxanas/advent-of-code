@@ -38,7 +38,7 @@ class Solution(u.Solution):
     def part1(self) -> int:
         return (
             Stream.of(self.input)
-            .flat_map(lambda pair: Stream.of(range(pair[0], pair[1] + 1)))
+            .flat_map(lambda x: Stream.of(range(x[0], x[1] + 1)))
             .filter(lambda num: re.match(r"^(\d+?)\1$", str(num)))
             .numeric()
             .sum()
@@ -47,7 +47,7 @@ class Solution(u.Solution):
     def part2(self) -> int:
         return (
             Stream.of(self.input)
-            .flat_map(lambda pair: Stream.of(range(pair[0], pair[1] + 1)))
+            .flat_map(lambda x: Stream.of(range(x[0], x[1] + 1)))
             .filter(lambda num: re.match(r"^(\d+?)\1+$", str(num)))
             .numeric()
             .sum()

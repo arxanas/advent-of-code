@@ -16,8 +16,9 @@ from typing import (
 from hypothesis import given
 from hypothesis import strategies as st
 
-T = TypeVar("T")
 K = TypeVar("K")
+T = TypeVar("T")
+U = TypeVar("U")
 V = TypeVar("V")
 
 
