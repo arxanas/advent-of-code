@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import functools
+import heapq
 import itertools
 import operator
 from typing import (
@@ -633,6 +634,10 @@ def minmax(iterable: Iterable[T]) -> tuple[T, T]:
         if elem > max_elem:  # type: ignore[operator]
             max_elem = elem
     return min_elem, max_elem
+
+
+min_n = heapq.nsmallest
+max_n = heapq.nlargest
 
 
 def flatten(iterable: Iterable[Iterable[T]]) -> Iterable[T]:

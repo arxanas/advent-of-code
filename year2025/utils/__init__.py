@@ -9,8 +9,10 @@ from ._funs import count as count
 from ._funs import flatten as flatten
 from ._funs import floyd_warshall as floyd_warshall
 from ._funs import group_by as group_by
+from ._funs import max_n as max_n
 from ._funs import max_subsequence as max_subsequence
 from ._funs import maybe_strip_prefix as maybe_strip_prefix
+from ._funs import min_n as min_n
 from ._funs import minmax as minmax
 from ._funs import nth as nth
 from ._funs import only as only
