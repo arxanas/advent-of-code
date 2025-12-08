@@ -75,6 +75,10 @@ class Coord:
         delta = self - other
         return max(abs(delta.x), abs(delta.y), abs(delta.z))
 
+    def euclidean_distance(self, other: "Coord") -> float:
+        delta = self - other
+        return (delta.x**2 + delta.y**2 + delta.z**2) ** 0.5
+
     def north(self) -> "Coord":
         return self + Deltas2d.NORTH
 
